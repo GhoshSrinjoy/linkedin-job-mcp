@@ -1745,6 +1745,26 @@ const scrapPageAndExtractData = query => {
 
       // Set user agent and other headers
       await page.setUserAgent(randomUseragent.getRandom() || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Set LinkedIn authentication cookies if available
+      if (linkedinAuth.isAuthenticated) {
+        await page.setCookie(
+          {
+            name: 'JSESSIONID',
+            value: linkedinAuth.jsessionid,
+            domain: '.linkedin.com',
+            httpOnly: true
+          },
+          {
+            name: 'li_at',
+            value: linkedinAuth.li_at,
+            domain: '.linkedin.com',
+            httpOnly: true,
+            secure: true
+          }
+        );
+        console.log(`🔐 LinkedIn authentication cookies set`);
+      }
 
       // Anti-detection measures
       await page.evaluateOnNewDocument(() => {
@@ -1761,12 +1781,39 @@ const scrapPageAndExtractData = query => {
       // Wait for page to load and add realistic delay
       await delay(2000 + Math.random() * 2000);
 
-      // Wait for job cards to appear
+      // Handle sign-in modal if it appears
       try {
-        await page.waitForSelector('.job-search-card, .jobs-search-results__list-item', { timeout: 15000 });
-        console.log(`✅ Job listings found on page`);
+        await page.waitForSelector('[data-test-modal="authentication-join-now-modal"]', { timeout: 3000 });
+        console.log(`🚫 Sign-in modal detected, closing it...`);
+        await page.click('[data-test-modal-close-btn]');
+        await delay(1000);
       } catch (e) {
-        console.warn(`⚠️ No job listings found, page may not have loaded correctly`);
+        // No modal, continue
+      }
+
+      // Wait for job cards to appear - try multiple selectors
+      const jobSelectors = [
+        '.job-search-card',
+        '.jobs-search-results__list-item', 
+        '.base-card',
+        '.base-search-card',
+        '[data-entity-urn*="jobPosting"]'
+      ];
+      
+      let jobsFound = false;
+      for (const selector of jobSelectors) {
+        try {
+          await page.waitForSelector(selector, { timeout: 5000 });
+          console.log(`✅ Job listings found using selector: ${selector}`);
+          jobsFound = true;
+          break;
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      if (!jobsFound) {
+        console.warn(`⚠️ No job listings found with any selector`);
         // Take screenshot for debugging
         await page.screenshot({ path: 'linkedin-debug.png', fullPage: true });
         console.log(`📷 Debug screenshot saved as linkedin-debug.png`);
