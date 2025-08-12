@@ -1,0 +1,28 @@
+{
+  "name": "linkedin-jobs-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for LinkedIn job scraping",
+  "main": "server.js",
+  "bin": {
+    "linkedin-jobs-mcp": "./server.js"
+  },
+  "scripts": {
+    "test": "node test.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "mcp",
+    "linkedin",
+    "jobs",
+    "server",
+    "scraping"
+  ],
+  "author": "Srinjoy Ghosh",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "axios": "^0.27.2",
+    "cheerio": "^1.0.0-rc.12",
+    "random-useragent": "^0.5.0"
+  }
+}

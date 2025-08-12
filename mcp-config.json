@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "linkedin-jobs": {
+      "command": "node",
+      "args": ["server.js"],
+      "cwd": "C:\\Users\\Srinjoy Ghosh\\Desktop\\linkedin job mcp"
+    }
+  }
+}
