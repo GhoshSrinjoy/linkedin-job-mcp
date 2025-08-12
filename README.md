@@ -336,7 +336,7 @@ This tool is designed for:
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details
+Apache License - see [LICENSE](LICENSE) file for details
 
 ---
 
