@@ -332,7 +332,7 @@ This tool is designed for:
 
 **Srinjoy Ghosh**
 - GitHub: [@srinjoy-ghosh](https://github.com/srinjoy-ghosh)
-- Email: contact@srinjoy.dev
+- Email: ghoshsrinjoy97@gmail.com
 
 ## 📄 License
 
