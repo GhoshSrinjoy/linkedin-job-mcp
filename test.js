@@ -1,7 +1,7 @@
 const linkedIn = require("./index");
 
 // Set authentication directly with your cookies
-linkedIn.setAuth('ajax:4373608599007478933', 'AQEDASu607wD8iZLAAABlAo0X6QAAAGYqDhfJU0AD-tpH9PxYdEl0VMOin2HHmg_WNw_WtmuIFfDft7fXqK_dxRKsLDrBNQ3tREbUy88slQFBx9mytzCya53qG2QNSx-RWNkWkSOCzSA8bd6qb3DvaJ3');
+// linkedIn.setAuth('ajax:4373608599007478933', 'AQEDASu607wD8iZLAAABlAo0X6QAAAGYqDhfJU0AD-tpH9PxYdEl0VMOin2HHmg_WNw_WtmuIFfDft7fXqK_dxRKsLDrBNQ3tREbUy88slQFBx9mytzCya53qG2QNSx-RWNkWkSOCzSA8bd6qb3DvaJ3');
 
 const queryOptions = {
   keyword: "software engineer",

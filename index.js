@@ -1707,15 +1707,17 @@ const scrapPageAndExtractData = query => {
         }
       }
 
-      // Build LinkedIn jobs search URL
-      const baseUrl = 'https://www.linkedin.com/jobs/search';
+      // Try public LinkedIn jobs search first (guest mode)
+      const baseUrl = 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search';
       const params = new URLSearchParams({
         keywords: query.titleQuery() ? query.titleQuery().replace(/"/g, '') : '',
         location: query.locationQuery() || '',
         ...(query.geoId && { geoId: query.geoId }),
         f_TPR: query.filter_timePostedRange,
         ...(query.getRemoteFilter() && { f_WT: query.getRemoteFilter() }),
-        ...(query.getJobTypeFilter() && { f_JT: query.getJobTypeFilter().split('=')[1] })
+        ...(query.getJobTypeFilter() && { f_JT: query.getJobTypeFilter().split('=')[1] }),
+        start: 0,
+        count: 25
       });
       
       const url = `${baseUrl}?${params.toString()}`;
@@ -1723,7 +1725,7 @@ const scrapPageAndExtractData = query => {
 
       console.log(`🤖 Starting Puppeteer browser...`);
       
-      // Launch browser with stealth options
+      // Launch browser with advanced stealth options
       browser = await puppeteer.launch({
         headless: 'new',
         args: [
@@ -1731,13 +1733,29 @@ const scrapPageAndExtractData = query => {
           '--disable-setuid-sandbox',
           '--disable-blink-features=AutomationControlled',
           '--disable-extensions',
+          '--disable-plugins-discovery',
           '--disable-dev-shm-usage',
           '--disable-gpu',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-default-apps',
+          '--disable-popup-blocking',
+          '--disable-translate',
+          '--disable-background-timer-throttling',
+          '--disable-renderer-backgrounding',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-client-side-phishing-detection',
+          '--disable-sync',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
           '--window-size=1920,1080',
           '--disable-web-security',
-          '--allow-running-insecure-content'
+          '--allow-running-insecure-content',
+          '--user-data-dir=./chrome-user-data'
         ],
-        defaultViewport: { width: 1920, height: 1080 }
+        defaultViewport: { width: 1920, height: 1080 },
+        ignoreDefaultArgs: ['--enable-automation'],
+        executablePath: process.env.CHROME_PATH || undefined
       });
 
       console.log(`✅ Browser started successfully`);
@@ -1766,20 +1784,98 @@ const scrapPageAndExtractData = query => {
         console.log(`🔐 LinkedIn authentication cookies set`);
       }
 
-      // Anti-detection measures
+      // Advanced anti-detection measures
       await page.evaluateOnNewDocument(() => {
+        // Remove webdriver traces
         Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        delete navigator.__proto__.webdriver;
+        
+        // Realistic plugins array
+        Object.defineProperty(navigator, 'plugins', {
+          get: () => ({
+            length: 3,
+            0: { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer' },
+            1: { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai' },
+            2: { name: 'Native Client', filename: 'internal-nacl-plugin' }
+          })
+        });
+        
+        // More realistic navigator properties
         Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-        window.chrome = { runtime: {} };
+        Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+        Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 });
+        Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
+        
+        // Chrome runtime
+        window.chrome = { 
+          runtime: {},
+          loadTimes: function() { return {}; },
+          csi: function() { return {}; }
+        };
+        
+        // Permissions API
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+          parameters.name === 'notifications' ?
+            Promise.resolve({ state: Notification.permission }) :
+            originalQuery(parameters)
+        );
+        
+        // WebGL vendor info
+        const getParameter = WebGLRenderingContext.getParameter;
+        WebGLRenderingContext.prototype.getParameter = function(parameter) {
+          if (parameter === 37445) return 'Intel Inc.';
+          if (parameter === 37446) return 'Intel(R) Iris(TM) Graphics 6100';
+          return getParameter(parameter);
+        };
+        
+        // Screen properties that match real users
+        Object.defineProperty(screen, 'availHeight', { get: () => 1040 });
+        Object.defineProperty(screen, 'availWidth', { get: () => 1920 });
+        Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
+        Object.defineProperty(screen, 'pixelDepth', { get: () => 24 });
       });
 
       console.log(`🌐 Navigating to LinkedIn...`);
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      console.log(`✅ Page loaded`);
+      try {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        console.log(`✅ Page loaded`);
+        
+        // Wait for network to settle
+        await delay(3000);
+        
+        // Take screenshot to see what's happening
+        await page.screenshot({ path: 'linkedin-debug.png', fullPage: true });
+        console.log(`📷 Debug screenshot saved`);
+        
+      } catch (e) {
+        console.warn(`⚠️ Navigation failed: ${e.message}`);
+        // Try to take screenshot anyway
+        try {
+          await page.screenshot({ path: 'linkedin-error.png', fullPage: true });
+          console.log(`📷 Error screenshot saved as linkedin-error.png`);
+        } catch (ss) {}
+        throw e;
+      }
 
-      // Wait for page to load and add realistic delay
-      await delay(2000 + Math.random() * 2000);
+      // Human-like behavior after page load
+      console.log(`🧑 Simulating human behavior...`);
+      
+      // Random mouse movements
+      await page.mouse.move(Math.random() * 400 + 100, Math.random() * 300 + 100);
+      await delay(200 + Math.random() * 300);
+      
+      // Scroll like a human (small random scrolls)
+      for (let i = 0; i < 3; i++) {
+        await page.evaluate(() => {
+          window.scrollBy(0, Math.random() * 100 + 50);
+        });
+        await delay(300 + Math.random() * 500);
+      }
+      
+      // Move mouse again
+      await page.mouse.move(Math.random() * 600 + 200, Math.random() * 400 + 200);
+      await delay(1000 + Math.random() * 2000);
 
       // Handle sign-in modal if it appears
       try {
