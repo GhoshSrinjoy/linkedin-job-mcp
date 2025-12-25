@@ -1,6 +1,42 @@
+*“My AI found five openings before I finished my coffee. That’s productivity !’”*
+
 # LinkedIn Jobs MCP Server
 
-A Model Context Protocol (MCP) server that provides LinkedIn job search capabilities to LLMs with dynamic location geocoding.
+# 💼 LinkedIn Jobs MCP Server  
+
+A Model Context Protocol (MCP) server that gives LLMs real-time job search powers — including LinkedIn queries, dynamic geocoding, and intelligent filtering.  
+Think of it as your AI-powered recruiter that never sleeps (and actually reads the job description). 🤖  
+
+🔗 **Repo:** https://github.com/GhoshSrinjoy/linkedin-job-mcp  
+
+---
+
+## Executive Summary  
+
+This MCP server lets AI models search for LinkedIn jobs, filter by location, experience, and salary, and return structured data in JSON format , perfect for autonomous agents, dashboards, or research tools.  
+
+It’s designed to handle:  
+- Smart geolocation (via OpenStreetMap)  
+- Domain switching (EU/German LinkedIn variants)  
+- Rate limiting and caching for performance  
+- JSON responses for clean parsing  
+
+Built with Node.js and focused on maintainability, extensibility, and responsible automation.  
+
+---
+
+## Business Problem  
+
+Most LLMs can summarize résumés but can’t *find* you jobs.  
+And job platforms like LinkedIn actively block automation through browser fingerprinting, bot detection, and API restrictions.  
+
+This project provides a transparent, research-oriented framework for safe and compliant job data exploration , while educating developers on responsible scraping limits.  
+
+**Why it matters:**  
+- Manual searches don’t scale.  
+- Official APIs are restricted or costly.  
+- Businesses and researchers need structured access to job market data.  
+
 
 ## Features
 
@@ -400,6 +436,28 @@ This tool is designed for:
 - ❌ Personal data collection
 
 *Users must comply with LinkedIn's Terms of Service, applicable data protection laws (GDPR, CCPA), and respect rate limits.*
+
+## Skills  
+
+This project demonstrates Node.js backend development, web automation defense handling, dynamic geocoding, caching, rate limiting, and MCP integration for LLMs.  
+It’s a hands-on example of bridging job-market data and AI reasoning — responsibly. 🧠  
+
+---
+
+## Results & Business Recommendation  
+
+**What it delivers**  
+- Structured job data in JSON format  
+- Geocoded, filterable search results  
+- Fast performance with caching  
+- Educational transparency about automation risks  
+
+**Recommended use cases**  
+- Personal job dashboards  
+- Research projects on labor markets  
+- LLM-based personal assistants  
+- Ethical web automation studies
+---
 
 ## 👤 Author
 
