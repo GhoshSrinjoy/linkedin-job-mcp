@@ -1,6 +1,11 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 const randomUseragent = require("random-useragent");
+const {
+  USER_AGENT,
+  REQUEST_TIMEOUT_MS,
+  CACHE_TTL_MS,
+} = require("./config");
 
 // Simple delay helper for retries/backoff
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,7 +14,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 class JobCache {
   constructor() {
     this.cache = new Map();
-    this.TTL = 60 * 60 * 1000;
+    this.TTL = CACHE_TTL_MS;
   }
 
   set(key, value) {
@@ -36,6 +41,7 @@ const BASE_URL =
   "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search";
 const PAGE_SIZE = 25;
 const DEFAULT_USER_AGENT =
+  USER_AGENT ||
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 // ---------------------------------------------------------------------------
@@ -200,7 +206,7 @@ async function fetchJobsPage(params, attempt = 1) {
   try {
     const resp = await axios.get(url, {
       headers,
-      timeout: 15000,
+      timeout: REQUEST_TIMEOUT_MS,
       validateStatus: (s) => s >= 200 && s < 400,
     });
     return resp.data;

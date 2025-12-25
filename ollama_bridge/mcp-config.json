@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "linkedin-jobs": {
+      "command": "node",
+      "args": [
+        "c:/Users/Srinjoy Ghosh/Desktop/lookinto/linkedin job mcp/ollama_bridge/mcp-server.js"
+      ]
+    }
+  }
+}

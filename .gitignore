@@ -10,3 +10,13 @@ Thumbs.db
 /.env.*
 /.cmd*
 /.cjs
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ollmcp generated config (use ollama_bridge/mcp-config.json instead)
+.ollmcp.json
