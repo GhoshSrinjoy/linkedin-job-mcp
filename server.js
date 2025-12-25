@@ -46,10 +46,25 @@ class LinkedInJobsServer {
                   description: "Location to search for jobs (e.g., 'Berlin, Germany')",
                   default: "",
                 },
+                city: {
+                  type: "string",
+                  description: "Optional city to refine location (e.g., 'Berlin')",
+                  default: "",
+                },
+                country: {
+                  type: "string",
+                  description: "Optional country to refine location (e.g., 'Germany')",
+                  default: "",
+                },
+                geoId: {
+                  type: "string",
+                  description: "Optional LinkedIn geoId to bypass location guessing (e.g., '103644278')",
+                  default: "",
+                },
                 dateSincePosted: {
                   type: "string",
                   description: "Date range for job posting",
-                  enum: ["past month", "past week", "24hr"],
+                  enum: ["past month", "past week", "past 24 hours", "24hr", "today"],
                   default: "",
                 },
                 jobType: {
@@ -118,6 +133,9 @@ class LinkedInJobsServer {
           const queryOptions = {
             keyword: args.keyword || "",
             location: args.location || "",
+            city: args.city || "",
+            country: args.country || "",
+            geoId: args.geoId || "",
             dateSincePosted: args.dateSincePosted || "",
             jobType: args.jobType || "",
             remoteFilter: args.remoteFilter || "",
