@@ -5,7 +5,11 @@
 A Model Context Protocol (MCP) server that gives LLMs real-time job search powers — including LinkedIn queries, dynamic geocoding, and intelligent filtering.  
 Think of it as your AI-powered recruiter that never sleeps (and actually reads the job description). 🤖  
 
-🔗 **Repo:** https://github.com/GhoshSrinjoy/linkedin-job-mcp  
+🔗 **Repo:** https://github.com/GhoshSrinjoy/linkedin-job-mcp
+📦 **NPM:** https://www.npmjs.com/package/linkedin-jobs-mcp
+
+[![npm version](https://badge.fury.io/js/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
 
 ---
 
