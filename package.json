@@ -4,8 +4,8 @@
   "description": "MCP server for LinkedIn job scraping",
   "main": "server.js",
   "bin": {
-    "linkedin-jobs-mcp": "./server.js",
-    "linkedin-jobs": "./bin/linkedin-jobs.js"
+    "linkedin-jobs-mcp": "server.js",
+    "linkedin-jobs": "bin/linkedin-jobs.js"
   },
   "scripts": {
     "test": "node test.js",
