@@ -4,11 +4,13 @@
   "description": "MCP server for LinkedIn job scraping",
   "main": "server.js",
   "bin": {
-    "linkedin-jobs-mcp": "./server.js"
+    "linkedin-jobs-mcp": "./server.js",
+    "linkedin-jobs": "./bin/linkedin-jobs.js"
   },
   "scripts": {
     "test": "node test.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "api": "node api.js"
   },
   "keywords": [
     "mcp",
@@ -23,6 +25,9 @@
     "@modelcontextprotocol/sdk": "^1.25.1",
     "axios": "^1.13.2",
     "cheerio": "^1.0.0-rc.12",
-    "random-useragent": "^0.5.0"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "random-useragent": "^0.5.0",
+    "yargs": "^17.7.2"
   }
 }

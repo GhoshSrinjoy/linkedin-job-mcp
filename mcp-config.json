@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "linkedin-jobs": {
-      "command": "node",
-      "args": ["server.js"],
-      "cwd": "C:\\Users\\path\\to\\linkedin job mcp"
-    }
-  }
-}
