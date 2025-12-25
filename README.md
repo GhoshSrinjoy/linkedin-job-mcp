@@ -1,6 +1,4 @@
-*“My AI found five openings before I finished my coffee. That’s productivity !’”*
-
-# LinkedIn Jobs MCP Server
+*"My AI found five openings before I finished my coffee. That's productivity !'"*
 
 # 💼 LinkedIn Jobs MCP Server  
 
@@ -587,17 +585,17 @@ Reasons:
 # LinkedIn tracks automated usage of authenticated sessions
 ```
 
-**3. Installation Issues**
+**4. Installation Issues**
 ```bash
 # Clear npm cache
 npm cache clean --force
 
-# Reinstall dependencies  
+# Reinstall dependencies
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-**4. MCP Server Connection Issues**
+**5. MCP Server Connection Issues**
 - Ensure correct file paths in configuration
 - Check Node.js is in PATH
 - Verify MCP client supports the protocol version
@@ -701,75 +699,6 @@ Apache License - see [LICENSE](LICENSE) file for details
 
 ---
 
-⭐ **Star this repo** if you find it useful!  
-🐛 **Report issues** on GitHub  
+⭐ **Star this repo** if you find it useful!
+🐛 **Report issues** on GitHub
 💬 **Contribute** via pull requests
----
-
-## 🚀 New: Library, CLI, REST, and Ollama Integration
-
-- **Library**: `const { query } = require('./index');` then `await query({ keyword, location, dateSincePosted, jobType, remoteFilter, limit, sortBy, geoId, city, country });`
-- **CLI**: `npx linkedin-jobs --keyword "data scientist" --location "Germany" --remoteFilter remote --dateSincePosted "past week" --limit 20`
-- **REST**: `npm run api` -> `POST /search` with JSON body of the same fields; `GET /health` for probes.
-- **Env config**: `LINKEDIN_USER_AGENT`, `LINKEDIN_REQUEST_TIMEOUT_MS`, `LINKEDIN_CACHE_TTL_MS`, `PORT` (API), `API_RATE_LIMIT_WINDOW_MS`, `API_RATE_LIMIT_MAX`. `.env` is supported.
-- **MCP Server**: run the MCP server (`npm start`) and point an MCP-capable client at `server.js`; it will expose the `search_linkedin_jobs` tool to local models.
-
-### 🦙 Using with Ollama
-
-This project supports Ollama through the **MCP Client for Ollama** (`ollmcp`)! This allows local LLMs to use LinkedIn job search as a tool through an interactive terminal interface.
-
-**Quick Start:**
-
-1. **Navigate to ollama_bridge directory:**
-   ```bash
-   cd ollama_bridge
-   ```
-
-2. **Set up Python virtual environment** (first time only):
-   ```bash
-   # Create venv with Python 3.11+
-   uv venv .venv --python 3.11
-
-   # Install ollmcp client
-   uv pip install --python .venv/Scripts/python.exe ollmcp
-   ```
-
-3. **Start the interactive client** (Windows CMD/PowerShell):
-   ```cmd
-   start-ollmcp.bat
-   ```
-
-   Or manually:
-   ```cmd
-   .venv\Scripts\python.exe -m mcp_client_for_ollama -j mcp-config.json -m olmo-3.1:latest
-   ```
-
-4. **Use natural language to search jobs:**
-   ```
-   User: get me jobs for Software engineer fulltime in this recent week in the area of Erlangen Germany
-   ```
-
-The LLM will automatically use the `search_linkedin_jobs` tool!
-
-**Important Notes:**
-- Must run from Windows CMD or PowerShell (not Git Bash due to terminal compatibility)
-- The MCP server path in `mcp-config.json` needs to be updated to your actual installation directory
-- Requires Ollama to be running locally at `http://localhost:11434`
-
-**Supported Ollama Models with Tool Calling:**
-- `olmo-3.1:latest` ✅
-- `mistral-small3.2:latest` ✅
-- `qwen3-coder:latest` ✅
-- `gemma3:27b` ✅
-- `phi4:latest` ✅
-
-**Interactive Commands:**
-- `t` or `tools` - Enable/disable tools (if not showing up)
-- `m` or `model` - Switch models
-- `rs` or `reload-servers` - Reload MCP servers
-- `hil` or `human-in-loop` - Toggle tool execution confirmation
-- `q` or `quit` - Exit
-
-**Detailed Documentation:** See [ollama_bridge/README.md](ollama_bridge/README.md) for complete setup instructions and troubleshooting.
-
-**Note**: Check [Ollama's tools models](https://ollama.com/search?c=tools) for the latest list of models supporting function calling.
