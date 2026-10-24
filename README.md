@@ -1,7 +1,8 @@
 # LinkedIn Jobs MCP
 
-LinkedIn job search and full job details for your AI apps. A Windows app connects itself to Claude Code, Codex,
-VS Code and other MCP clients; the same tools also come as an npm package, a REST API and a command line.
+LinkedIn job search and full job details for your AI apps, plus **Ghost Job Radar**, a dashboard that shows which
+job postings are likely not really open. A Windows app connects itself to Claude Code, Codex, VS Code and other MCP
+clients; the same tools also come as an npm package, a REST API and a command line.
 
 [![npm version](https://img.shields.io/npm/v/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
 [![npm downloads](https://img.shields.io/npm/dm/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
@@ -16,8 +17,31 @@ VS Code and other MCP clients; the same tools also come as an npm package, a RES
 |------|-----------------------|
 | `search_linkedin_jobs` | Jobs by keyword and location, filtered by date, job type, remote work, salary, experience level, verified postings or fewer than 10 applicants |
 | `get_linkedin_job_details` | One job's full description, seniority, employment type, industries, posting age and applicant count |
+| `check_ghost_job` | Ghost Job Radar's grade for one posting: how likely it is a ghost job, your chance against the competition, and the facts behind it. Needs the radar running |
 
 It reads LinkedIn's public job pages, so it needs no account and no browser. Requests are spaced out and cached.
+
+## Ghost Job Radar
+
+A dashboard on your computer that grades every job it sees for ghost-job risk: postings that stay up far longer than
+usual for their occupation, reposts with unchanged text, jobs gone from the employer's own site, start dates long
+past, talent-pool wording, layoff news while still hiring, and what you know about the employer. Every job gets three
+separate verdicts: ghost-risk, your chance, and whether the employer answers.
+
+![Ghost Job Radar: every job as a mark, further out means online longer than usual](https://raw.githubusercontent.com/GhoshSrinjoy/linkedin-job-mcp/main/docs/screenshots/radar.png)
+
+```bash
+linkedin-jobs-mcp radar
+```
+
+With the Windows app, choose **5** in its menu or run `.\linkedin-jobs-mcp.exe radar`. It needs
+[Python 3.11 or newer](https://www.python.org/downloads/). The first start sets up the radar's Python environment;
+every start also runs the LinkedIn source, so LinkedIn search and job pages work right away. Your data stays on your
+computer, in `%LOCALAPPDATA%\linkedin-jobs-mcp\radar` (macOS: `~/Library/Application Support/linkedin-jobs-mcp/radar`,
+Linux: `~/.local/share/linkedin-jobs-mcp/radar`). A `.env` file there switches on more sources, such as the
+Bundesagentur job board or Google for Jobs; [radar/README.md](radar/README.md) explains every view, signal and source.
+
+![Why a posting got its grade](https://raw.githubusercontent.com/GhoshSrinjoy/linkedin-job-mcp/main/docs/screenshots/radar-reasons.png)
 
 ## Install
 
@@ -98,6 +122,7 @@ entry to add is printed instead.
 | `linkedin-jobs-mcp mcp` | MCP over stdio (what the connected apps run) |
 | `linkedin-jobs-mcp job <id or URL>` | One job's details as JSON |
 | `linkedin-jobs-mcp search --keyword "data engineer" --location "Berlin, Germany"` | Search from the command line |
+| `linkedin-jobs-mcp radar [--port 8000] [--no-browser]` | Open Ghost Job Radar |
 | `linkedin-jobs-mcp uninstall` | Disconnect every app and remove the installed Windows app |
 
 With the Windows app, run them from its folder, for example `.\linkedin-jobs-mcp.exe status`.
@@ -275,10 +300,22 @@ application). Pushing a tag such as `v1.2.0` builds the app on GitHub Actions an
 ## Tests
 
 ```bash
-npm test
+npm test                              # job pages, settings files, the MCP server and the HTTP API
+cd radar && python -m pytest          # Ghost Job Radar
 ```
 
-The tests run offline: job-page parsing, settings files, the MCP server and the HTTP API.
+Both run offline.
+
+## Repository layout
+
+| Path | What it is |
+|------|------------|
+| `index.js` | LinkedIn search and job details |
+| `server.js`, `api.js` | MCP server (stdio and HTTP) and REST API |
+| `app.js`, `clients.js`, `radar.js` | The app: commands, client setup, starting the radar |
+| `radar/` | Ghost Job Radar (Python): dashboard, scoring, research report and notes, browser extension |
+| `scripts/build-win.js` | Builds the Windows app |
+| `test/` | Tests of the Node part |
 
 ## Responsible use
 

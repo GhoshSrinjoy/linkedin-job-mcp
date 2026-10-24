@@ -9,6 +9,44 @@ const {
 const linkedIn = require("./index.js");
 const { version } = require("./package.json");
 
+const radarUrl = () => (process.env.GHOSTRADAR_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+
+// Ghost Job Radar's verdict on one posting, shortened for an AI app
+async function checkGhostJob({ job, company, with_news: withNews = false }) {
+  const input = String(job || "").trim();
+  if (!input) throw new Error("Give a job link or the ad text");
+  let res;
+  try {
+    res = await fetch(`${radarUrl()}/api/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [/^https?:\/\//i.test(input) ? "url" : "text"]: input, company: company || null, with_news: Boolean(withNews) }),
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch (err) {
+    throw new Error(err.name === "TimeoutError"
+      ? "Ghost Job Radar did not answer within 2 minutes"
+      : "Ghost Job Radar is not running. Start it with: linkedin-jobs-mcp radar");
+  }
+  if (!res.ok) throw new Error(`Ghost Job Radar returned HTTP ${res.status}`);
+  const data = await res.json();
+  const r = data.result;
+  if (!r) return { success: false, mode: data.mode, notes: data.notes };
+  const s = r.score;
+  return {
+    success: true,
+    job: { title: r.posting.title, company: r.posting.company, location: r.posting.location, url: r.posting.url },
+    ghost_risk: { grade: s.grade, label: s.grade_label, score: s.risk, confidence: s.confidence },
+    patterns: s.types.filter((t) => t.score >= 0.3).map((t) => ({ pattern: t.label, strength: t.score })),
+    your_chance: { chance: s.competition.chance, text: s.competition.text || null },
+    communication: s.communication?.text || null,
+    advice: s.advice,
+    reasons: s.reasons.filter((x) => x.direction !== "info").map((x) => ({ signal: x.label, fact: x.fact, points: x.points })),
+    caveats: s.caveats,
+    notes: data.notes,
+  };
+}
+
 class LinkedInJobsServer {
   constructor() {
     this.server = new Server(
@@ -137,6 +175,32 @@ class LinkedInJobsServer {
               required: ["job"],
             },
           },
+          {
+            name: "check_ghost_job",
+            description:
+              "Grade a job posting with Ghost Job Radar: how likely it is to be a ghost job (not really open), " +
+              "your chance against the competition, and the facts behind the grade. Needs the radar running " +
+              "(linkedin-jobs-mcp radar)",
+            inputSchema: {
+              type: "object",
+              properties: {
+                job: {
+                  type: "string",
+                  description: "Job link (LinkedIn, the employer's site or a job board) or the pasted ad text",
+                },
+                company: {
+                  type: "string",
+                  description: "Company name, when the job is pasted text",
+                },
+                with_news: {
+                  type: "boolean",
+                  description: "Also check company news (slower)",
+                  default: false,
+                },
+              },
+              required: ["job"],
+            },
+          },
         ],
       };
     });
@@ -218,6 +282,17 @@ class LinkedInJobsServer {
           console.error("Error in job details:", error);
           return {
             content: [{ type: "text", text: JSON.stringify({ success: false, error: error.message, job: args.job }, null, 2) }],
+            isError: true,
+          };
+        }
+      }
+
+      if (name === "check_ghost_job") {
+        try {
+          return { content: [{ type: "text", text: JSON.stringify(await checkGhostJob(args || {}), null, 2) }] };
+        } catch (error) {
+          return {
+            content: [{ type: "text", text: JSON.stringify({ success: false, error: error.message }, null, 2) }],
             isError: true,
           };
         }

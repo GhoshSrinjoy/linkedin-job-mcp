@@ -1,7 +1,7 @@
 {
   "name": "linkedin-jobs-mcp",
-  "version": "1.2.0",
-  "description": "LinkedIn job search and job details over MCP, with a Windows app that connects itself to MCP clients",
+  "version": "1.3.0",
+  "description": "LinkedIn job search and job details over MCP, plus Ghost Job Radar, a dashboard that grades job postings for ghost-job risk. Comes with a Windows app that connects itself to MCP clients",
   "main": "index.js",
   "bin": {
     "linkedin-jobs-mcp": "app.js",
@@ -14,13 +14,18 @@
     "app.js",
     "clients.js",
     "config.js",
-    "bin/"
+    "radar.js",
+    "bin/",
+    "radar/ghostradar/",
+    "radar/requirements.txt",
+    "radar/data/ba_engpass.csv"
   ],
   "scripts": {
     "test": "node --test test/app.test.js",
     "start": "node server.js",
     "api": "node api.js",
     "app": "node app.js",
+    "radar": "node app.js radar",
     "build:win": "node scripts/build-win.js"
   },
   "engines": {
@@ -32,7 +37,9 @@
     "linkedin",
     "jobs",
     "job-search",
-    "mcp-server"
+    "mcp-server",
+    "ghost-jobs",
+    "job-market"
   ],
   "author": "Srinjoy Ghosh",
   "license": "PolyForm-Noncommercial-1.0.0",

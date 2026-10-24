@@ -22,6 +22,8 @@ Usage: ${APP} <command> [options]
   status                  which apps are found and connected
   config [app ...]        print the settings to add by hand
   uninstall               disconnect every app and remove the installed copy
+  radar [--port 8000] [--no-browser]
+                          open Ghost Job Radar, the ghost-job dashboard (needs Python 3.11+)
   mcp                     MCP server over stdio (what connected apps run)
   serve [--port 3000] [--host 127.0.0.1]
                           REST API plus MCP over HTTP at http://127.0.0.1:3000/mcp
@@ -244,6 +246,7 @@ async function menu() {
   2  Disconnect from every app
   3  Show the settings to add by hand
   4  Start the HTTP server (http://127.0.0.1:3000/mcp)
+  5  Open Ghost Job Radar, the ghost-job dashboard
   q  Quit
 `);
     const choice = await ask("Choose: ");
@@ -251,6 +254,18 @@ async function menu() {
     if (choice === "4") {
       rl.close();
       serve({});
+      return;
+    }
+    if (choice === "5") {
+      rl.close();
+      try {
+        await require("./radar").runRadar({});
+      } catch (err) {
+        console.log(`Failed: ${err.message}`);
+        // keep the message readable before a double-clicked window closes
+        await new Promise((resolve) => readline.createInterface({ input: process.stdin }).question("\nPress Enter to close ", resolve));
+        process.exit(1);
+      }
       return;
     }
     if (!actions[choice]) continue;
@@ -287,6 +302,11 @@ async function main([command, ...rest]) {
       return status();
     case "config":
       return printConfig(named() || CLIENTS);
+    case "radar": {
+      const port = Number(opts.port || opts.p || 8000);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`Not a port: ${opts.port || opts.p}`);
+      return require("./radar").runRadar({ port, browser: !opts["no-browser"] });
+    }
     case "job":
       return job(opts._[0]);
     case "search":

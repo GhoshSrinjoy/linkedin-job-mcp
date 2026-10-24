@@ -85,14 +85,84 @@ test("only the linkedin-jobs table is removed from TOML", () => {
   assert.equal(tomlCommand(text), "old");
 });
 
-test("the MCP server lists both tools", async () => {
+async function mcpClient() {
   const [serverSide, clientSide] = InMemoryTransport.createLinkedPair();
   await createServer().connect(serverSide);
   const client = new Client({ name: "test", version: "1.0.0" });
   await client.connect(clientSide);
+  return client;
+}
+
+test("the MCP server lists its tools", async () => {
+  const client = await mcpClient();
   const { tools } = await client.listTools();
-  assert.deepEqual(tools.map((t) => t.name), ["search_linkedin_jobs", "get_linkedin_job_details"]);
+  assert.deepEqual(tools.map((t) => t.name), ["search_linkedin_jobs", "get_linkedin_job_details", "check_ghost_job"]);
   await client.close();
+});
+
+test("check_ghost_job asks Ghost Job Radar and shortens its answer", async () => {
+  let asked = null;
+  const radar = http.createServer((req, res) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      asked = { path: req.url, body: JSON.parse(body) };
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({
+        mode: "fetched",
+        notes: [],
+        sources_used: [],
+        result: {
+          posting: { title: "Data Engineer", company: "Example GmbH", location: "Berlin", url: "https://example.com/jobs/1" },
+          score: {
+            risk: 52, grade: "elevated", grade_label: "Elevated ghost-risk", confidence: "medium",
+            types: [{ key: "stale", label: "Possibly filled or abandoned", score: 0.6 }, { key: "pool", label: "Candidate pool", score: 0.1 }],
+            competition: { chance: "low", text: "120 applicants." },
+            communication: { text: "No applications to this employer recorded yet." },
+            advice: "Verify first.",
+            reasons: [
+              { label: "Online much longer than usual", fact: "Online for 300 days.", direction: "raises", points: 18 },
+              { label: "No pay stated", fact: "Not scored.", direction: "info", points: 0 },
+            ],
+            caveats: [],
+          },
+        },
+      }));
+    });
+  });
+  await new Promise((resolve) => radar.listen(0, "127.0.0.1", resolve));
+  process.env.GHOSTRADAR_URL = `http://127.0.0.1:${radar.address().port}`;
+  const client = await mcpClient();
+  try {
+    const res = await client.callTool({ name: "check_ghost_job", arguments: { job: "https://example.com/jobs/1" } });
+    const out = JSON.parse(res.content[0].text);
+    assert.deepEqual(asked, { path: "/api/check", body: { url: "https://example.com/jobs/1", company: null, with_news: false } });
+    assert.equal(out.ghost_risk.grade, "elevated");
+    assert.deepEqual(out.patterns, [{ pattern: "Possibly filled or abandoned", strength: 0.6 }]);
+    assert.deepEqual(out.reasons.map((r) => r.signal), ["Online much longer than usual"]);
+    assert.equal(out.your_chance.chance, "low");
+  } finally {
+    await client.close();
+    radar.close();
+    delete process.env.GHOSTRADAR_URL;
+  }
+});
+
+test("check_ghost_job says how to start the radar when it is not running", async () => {
+  const closed = http.createServer();
+  await new Promise((resolve) => closed.listen(0, "127.0.0.1", resolve));
+  const { port } = closed.address();
+  await new Promise((resolve) => closed.close(resolve));
+  process.env.GHOSTRADAR_URL = `http://127.0.0.1:${port}`;
+  const client = await mcpClient();
+  try {
+    const res = await client.callTool({ name: "check_ghost_job", arguments: { job: "Senior data engineer, Berlin" } });
+    assert.equal(res.isError, true);
+    assert.match(res.content[0].text, /linkedin-jobs-mcp radar/);
+  } finally {
+    await client.close();
+    delete process.env.GHOSTRADAR_URL;
+  }
 });
 
 test("the HTTP API answers on this computer and refuses other hosts", async () => {
