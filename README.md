@@ -1,341 +1,108 @@
-*"My AI found five openings before I finished my coffee. That's productivity !'"*
+# LinkedIn Jobs MCP
 
-# 💼 LinkedIn Jobs MCP Server  
+LinkedIn job search and full job details for your AI apps. A Windows app connects itself to Claude Code, Codex,
+VS Code and other MCP clients; the same tools also come as an npm package, a REST API and a command line.
 
-A Model Context Protocol (MCP) server that gives LLMs real-time job search powers — including LinkedIn queries, dynamic geocoding, and intelligent filtering.  
-Think of it as your AI-powered recruiter that never sleeps (and actually reads the job description). 🤖  
-
-🔗 **Repo:** https://github.com/GhoshSrinjoy/linkedin-job-mcp
-📦 **NPM:** https://www.npmjs.com/package/linkedin-jobs-mcp
-
-[![npm version](https://badge.fury.io/js/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
+[![npm version](https://img.shields.io/npm/v/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
 [![npm downloads](https://img.shields.io/npm/dm/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
+[![CI](https://github.com/GhoshSrinjoy/linkedin-job-mcp/actions/workflows/node.js.yml/badge.svg)](https://github.com/GhoshSrinjoy/linkedin-job-mcp/actions/workflows/node.js.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/GhoshSrinjoy/linkedin-job-mcp/blob/main/LICENSE)
 
----
+![The setup menu of the Windows app](https://raw.githubusercontent.com/GhoshSrinjoy/linkedin-job-mcp/main/docs/screenshots/setup-menu.png)
 
-## Executive Summary  
+## Tools
 
-This MCP server lets AI models search for LinkedIn jobs, filter by location, experience, and salary, and return structured data in JSON format , perfect for autonomous agents, dashboards, or research tools.  
+| Tool | What your AI app gets |
+|------|-----------------------|
+| `search_linkedin_jobs` | Jobs by keyword and location, filtered by date, job type, remote work, salary, experience level, verified postings or fewer than 10 applicants |
+| `get_linkedin_job_details` | One job's full description, seniority, employment type, industries, posting age and applicant count |
 
-It’s designed to handle:  
-- Smart geolocation (via OpenStreetMap)  
-- Domain switching (EU/German LinkedIn variants)  
-- Rate limiting and caching for performance  
-- JSON responses for clean parsing  
+It reads LinkedIn's public job pages, so it needs no account and no browser. Requests are spaced out and cached.
 
-Built with Node.js and focused on maintainability, extensibility, and responsible automation.  
+## Install
 
----
+### Windows app
 
-## Business Problem  
+1. Download `linkedin-jobs-mcp.exe` from the [latest release](https://github.com/GhoshSrinjoy/linkedin-job-mcp/releases/latest).
+   It is one file with Node.js inside.
+2. Double-click it. The file is not code-signed, so Windows may say "Windows protected your PC": choose
+   **More info → Run anyway**.
+3. Choose **1 Install and connect the apps found**. The app copies itself to
+   `%LOCALAPPDATA%\Programs\linkedin-jobs-mcp\` and adds itself to every supported app it finds.
+4. Restart those apps. The app has no window of its own: they start it in the background when they need the tools.
 
-Most LLMs can summarize résumés but can’t *find* you jobs.  
-And job platforms like LinkedIn actively block automation through browser fingerprinting, bot detection, and API restrictions.  
+![Installing the app and connecting the apps found](https://raw.githubusercontent.com/GhoshSrinjoy/linkedin-job-mcp/main/docs/screenshots/install.png)
 
-This project provides a transparent, research-oriented framework for safe and compliant job data exploration , while educating developers on responsible scraping limits.  
+### npm (Windows, macOS, Linux)
 
-**Why it matters:**  
-- Manual searches don’t scale.  
-- Official APIs are restricted or costly.  
-- Businesses and researchers need structured access to job market data.  
+Needs Node.js 18 or newer.
 
-
-## 🎯 Complete Feature List
-
-### 🔌 Multiple Integration Methods
-
-#### 1. **MCP Server for Claude Desktop** (`server.js`)
-- ✅ Full Model Context Protocol implementation
-- ✅ Exposes `search_linkedin_jobs` tool to Claude and other MCP clients
-- ✅ `get_linkedin_job_details` tool: one job's full description, criteria and applicant count
-- ✅ Stdio transport for seamless integration
-- ✅ Auto-discovery by MCP-compatible clients
-- **Usage**: `npm start` → Configure in `claude_desktop_config.json`
-
-#### 2. **MCP Server for Ollama** (`ollama_bridge/mcp-server.js`)
-- ✅ Interactive terminal UI with `ollmcp` client
-- ✅ Works with local LLMs (olmo-3.1, mistral-small3.2, qwen3-coder, gemma3:27b, phi4)
-- ✅ Human-in-the-loop mode for tool execution approval
-- ✅ Hot-reload servers without restarting
-- ✅ Tool enable/disable management
-- **Usage**: `cd ollama_bridge && start-ollmcp.bat`
-
-#### 3. **REST API Server** (`api.js`)
-- ✅ Express.js REST API with rate limiting
-- ✅ `POST /search` - Job search with JSON body
-- ✅ `GET /job/:id` or `GET /job?url=<job link>` - One job's full description, criteria and applicant count
-- ✅ `GET /health` - Health check endpoint
-- ✅ `POST /mcp` - The same MCP tools over Streamable HTTP, for apps that connect by URL
-- ✅ Configurable rate limits and timeouts
-- ✅ CORS enabled for web applications
-- **Usage**: `npm run api` → `http://localhost:3000`
-
-#### 4. **Command-Line Interface** (`bin/linkedin-jobs.js`)
-- ✅ Standalone CLI tool with argument parsing
-- ✅ Works with `npx linkedin-jobs` globally
-- ✅ All search parameters via flags
-- ✅ JSON output for scripting
-- **Usage**: `npx linkedin-jobs --keyword "engineer" --location "Berlin"`
-
-#### 5. **Node.js Library** (`index.js`)
-- ✅ Import as npm module: `require('./index')`
-- ✅ Async/await promise-based API
-- ✅ Direct programmatic access
-- ✅ Use in custom Node.js applications
-- **Usage**: `const jobs = await linkedIn.query({keyword, location})`
-
-#### 6. **Windows App** (`app.js`)
-- ✅ One `.exe` with Node.js inside: nothing else to install
-- ✅ No window of its own: the apps you connect start it in the background
-- ✅ Connects itself to the MCP apps it finds, keeping their other settings
-- ✅ Also runs the REST API and MCP over HTTP (`serve`)
-- **Usage**: download `linkedin-jobs-mcp.exe` from the releases page and double-click it (see [Windows App](#-windows-app-no-nodejs-needed))
-
-### 🔍 Search & Filtering Capabilities
-
-- **Keywords**: Job titles, skills, technologies (e.g., "Software Engineer", "React Developer")
-- **Location**: City, country, or "Worldwide" with auto-geocoding
-- **Date Filters**: Past 24 hours, past week, past month
-- **Job Type**: Full-time, part-time, contract, temporary, volunteer, internship
-- **Remote Work**: On-site, remote, hybrid
-- **Salary**: Minimum salary filtering ($40k, $60k, $80k, $100k+)
-- **Experience**: Entry level, mid-senior, director, executive
-- **Sorting**: By relevance or recent date
-- **Limits**: Configure max results (5, 10, 25, etc.)
-- **Pagination**: Page through results
-- **Verified Jobs**: Filter for verified postings only
-- **Low Competition**: Jobs with <10 applicants
-
-### 🌍 Location & Geocoding
-
-- ✅ **Dynamic geocoding** via OpenStreetMap Nominatim API
-- ✅ **Built-in geoId mappings** for major countries (US, Germany, India, UK, Canada, Australia, etc.)
-- ✅ **Auto-detection** of German LinkedIn domain for EU locations
-- ✅ Fallback to location string if geoId not found
-- ✅ City and country-specific searches
-
-### ⚡ Performance & Reliability
-
-- **Caching**: 1-hour TTL for repeated searches (configurable via `LINKEDIN_CACHE_TTL_MS`)
-- **Rate Limiting**: 2-3 second delays between requests (API: configurable per window)
-- **Auto-retry**: Exponential backoff on errors (max 3 retries)
-- **Timeout Handling**: Configurable request timeouts (default: 30s)
-- **Error Recovery**: Graceful fallback on failed geocoding or network errors
-
-### 🛡️ Security & Configuration
-
-- **Environment Variables**: `.env` file support
-  - `LINKEDIN_USER_AGENT` - Custom user agent
-  - `LINKEDIN_REQUEST_TIMEOUT_MS` - Request timeout
-  - `LINKEDIN_CACHE_TTL_MS` - Cache duration
-  - `PORT` - API server port
-  - `HOST` - Address the API listens on (default `127.0.0.1`, this computer only; `0.0.0.0` serves other machines)
-  - `API_RATE_LIMIT_WINDOW_MS` - Rate limit window
-  - `API_RATE_LIMIT_MAX` - Max requests per window
-  - `LINKEDIN_DETAIL_MIN_INTERVAL_MS` - Minimum gap between job-detail page requests (default 1500)
-  - `LINKEDIN_DETAIL_CACHE_TTL_MS` - How long job details stay cached (default 6 hours)
-- **Stealth Measures**: Random user agents, realistic headers
-- **Session Management**: Cookie-based authentication support
-
-### 📊 Response Format
-
-- **Structured JSON**: Clean, parseable job data
-- **Rich Metadata**: Position, company, location, salary, date posted
-- **Direct Links**: LinkedIn job URLs and company logos
-- **Time Information**: Both ISO dates and human-readable "2 hours ago"
-- **Search Context**: Returns search parameters for debugging
-
-### 🧪 Testing & Development
-
-- ✅ Test suite included (`test.js`)
-- ✅ Example queries and usage patterns
-- ✅ Debug mode with verbose logging
-- ✅ Health check endpoints for monitoring
-- ✅ Clear error messages and troubleshooting guides
-
-
-## 🎯 What You Can Do With This Project
-
-### For Job Seekers
-- 🤖 **AI Job Assistant**: Let Claude/Ollama find jobs while you focus on applications
-- 📧 **Automated Alerts**: Build custom job alert systems
-- 📊 **Market Research**: Analyze job market trends and salary ranges
-- 🎯 **Smart Filtering**: Find niche opportunities (low applicants, verified only)
-
-### For Developers
-- 🔧 **Portfolio Project**: Showcase MCP integration, REST APIs, CLI tools
-- 📚 **Learning Resource**: Study web scraping, caching, rate limiting, MCP protocol
-- 🛠️ **Build On Top**: Create job dashboards, Slack bots, Discord integrations
-- 🧪 **Testing Ground**: Experiment with LLM tool calling and agent workflows
-
-### For Researchers
-- 📈 **Labor Market Analysis**: Study job postings, skills demand, geographic trends
-- 💼 **Recruitment Patterns**: Analyze posting frequency, company hiring behavior
-- 🌍 **Geographic Studies**: Compare job markets across regions
-- 💰 **Salary Research**: Track compensation trends by role/location
-
-### For Businesses
-- 🏢 **Talent Intelligence**: Monitor competitor hiring and market gaps
-- 🎯 **Candidate Sourcing**: Identify hiring opportunities and talent pools
-- 📊 **Market Positioning**: Understand salary benchmarks and benefits trends
-- 🤝 **Partnership Opportunities**: Find companies hiring in complementary areas
-
-### Integration Examples
-```javascript
-// Slack bot that posts jobs daily
-const jobs = await query({keyword: "Node.js", location: "Remote", dateSincePosted: "past 24 hours"});
-slackClient.postMessage(formatJobs(jobs));
-
-// Discord bot command
-client.on('message', async msg => {
-  if (msg.content.startsWith('!jobs')) {
-    const jobs = await query({keyword: msg.content.slice(6), limit: 5});
-    msg.reply(formatJobEmbed(jobs));
-  }
-});
-
-// Personal job dashboard with Express
-app.get('/my-jobs', async (req, res) => {
-  const jobs = await Promise.all([
-    query({keyword: "React", location: "SF"}),
-    query({keyword: "Node.js", location: "NYC"}),
-  ]);
-  res.render('dashboard', {jobs});
-});
+```bash
+npm install -g linkedin-jobs-mcp
+linkedin-jobs-mcp connect
 ```
 
----
+Or add it to an app by hand, through npx:
 
-## ⚠️ LinkedIn Bot Detection & Access Restrictions
+```json
+{
+  "mcpServers": {
+    "linkedin-jobs": { "command": "npx", "args": ["-y", "linkedin-jobs-mcp"] }
+  }
+}
+```
 
-**Important**: LinkedIn employs sophisticated anti-automation measures that prevent programmatic job searching:
+On Windows, some apps need `"command": "cmd", "args": ["/c", "npx", "-y", "linkedin-jobs-mcp"]`.
 
-### Current Technical Limitations
-- **Automated browsers detected** through WebDriver fingerprinting and behavioral analysis¹
-- **Redirect loops (ERR_TOO_MANY_REDIRECTS)** when automation is detected²
-- **Session-based blocking** even with valid authentication cookies
-- **API endpoints returning empty responses** or blocking requests entirely
+### From source
 
-### How LinkedIn Detects Bots
+```bash
+git clone https://github.com/GhoshSrinjoy/linkedin-job-mcp.git
+cd linkedin-job-mcp
+npm install
+npm run app -- connect
+```
 
-LinkedIn uses multiple detection methods based on industry research³:
-
-1. **Browser Fingerprinting**⁴:
-   - Detection of `navigator.webdriver` property
-   - Missing browser APIs that real browsers have
-   - Consistent canvas/WebGL rendering signatures
-   - Headless browser indicators
-
-2. **Behavioral Analysis**⁵:
-   - Lack of human mouse movements and scrolling patterns
-   - Too-precise click timing and navigation
-   - Missing keystroke dynamics variations
-   - Predictable request timing patterns
-
-3. **Network Analysis**⁶:
-   - Data center IP addresses vs residential
-   - Missing session history and cookies
-   - Inconsistent User-Agent headers
-   - Rate limiting violations
-
-4. **Authentication State**:
-   - Forced login requirements with CAPTCHA challenges
-   - Two-factor authentication triggers
-   - Account verification requirements
-
-### Why This Happens
-
-**Not primarily GDPR-related** - LinkedIn blocks automation globally:
-
-1. **Business Model Protection**: LinkedIn monetizes job data through recruiting services⁷
-2. **Terms of Service Enforcement**: Automated access violates LinkedIn's ToS⁸
-3. **Server Load Management**: Preventing resource abuse from bots
-4. **Data Quality**: Ensuring human interaction for analytics accuracy
-
-### Legal & Technical Alternatives
-
-**Recommended approaches:**
-- **LinkedIn Talent Solutions API**: Official paid access for businesses⁹
-- **Manual browsing**: Most reliable method
-- **Alternative platforms**: Indeed, Glassdoor, AngelList, Dice
-- **RSS job feeds**: Some sites offer structured data access
-- **Job aggregator APIs**: Services like Adzuna, JobSpicy, Reed API
-
-### Technical Implementation Status
-
-This tool includes:
-- ✅ **Advanced stealth measures**: WebDriver removal, realistic browser fingerprints
-- ✅ **Human-like behavior**: Random mouse movements, scrolling, delays  
-- ✅ **Location geocoding**: Fixed German/EU location mapping (Fürth→106430259)
-- ✅ **Authentication handling**: Session cookie integration
-- ❌ **LinkedIn access**: Currently blocked by detection systems
-
-*This tool is provided for educational purposes. Users are responsible for compliance with applicable laws and platform Terms of Service.*
-
----
-
-### References
-
-1. Acar, G., et al. "Web Browser Fingerprinting" (IEEE Security & Privacy, 2016)
-2. "ERR_TOO_MANY_REDIRECTS" - Chrome Network Error Documentation
-3. Bursztein, E. "Detecting Automation" (Google Security Blog, 2019)  
-4. Laperdrix, P., et al. "Browser Fingerprinting: A Survey" (ACM Computing Surveys, 2020)
-5. "Bot Detection Techniques" - Cloudflare Documentation, 2023
-6. "Automated Traffic Detection" - LinkedIn Engineering Blog, 2021
-7. LinkedIn Corporation Annual Report (SEC Form 10-K, 2023)
-8. LinkedIn User Agreement, Section 8.2 - "Dos and Don'ts" (Updated 2024)
-9. LinkedIn Talent Solutions API Documentation (Microsoft Developer Network, 2024)
-
-## 🚀 Installation & Setup
-
-### 🪟 Windows App (no Node.js needed)
-
-Download `linkedin-jobs-mcp.exe` from the [releases page](https://github.com/GhoshSrinjoy/linkedin-job-mcp/releases).
-It is one file with Node.js inside and has no window of its own: the apps you connect start it in the background
-whenever they need the job tools.
-
-1. Double-click `linkedin-jobs-mcp.exe`. The file is not code-signed, so Windows may say "Windows protected your
-   PC": choose **More info → Run anyway**.
-2. Choose **1 Install and connect the apps found**. The app copies itself to
-   `%LOCALAPPDATA%\Programs\linkedin-jobs-mcp\` and adds itself to every supported app it finds.
-3. Restart those apps (or reload their MCP servers). `search_linkedin_jobs` and `get_linkedin_job_details` are
-   then available.
-
-The same from a terminal:
-
-| Command | What it does |
-|---------|--------------|
-| `linkedin-jobs-mcp install` | Copy the app to `%LOCALAPPDATA%\Programs\linkedin-jobs-mcp\` and connect the apps found |
-| `linkedin-jobs-mcp connect [app ...]` | Connect the apps found, or only the named ones (also when not found) |
-| `linkedin-jobs-mcp disconnect [app ...]` | Remove the connection from every app, or only from the named ones |
-| `linkedin-jobs-mcp status` | Which apps are found and connected, and to which program |
-| `linkedin-jobs-mcp config [app ...]` | Print the settings to add by hand |
-| `linkedin-jobs-mcp serve [--port 3000] [--host 127.0.0.1]` | REST API plus MCP over HTTP at `http://127.0.0.1:3000/mcp` |
-| `linkedin-jobs-mcp mcp` | MCP over stdio (what the connected apps run) |
-| `linkedin-jobs-mcp job <id or URL>` | One job's details as JSON |
-| `linkedin-jobs-mcp search --keyword "data engineer" --location "Berlin, Germany"` | Search, with the same options as `linkedin-jobs` |
-| `linkedin-jobs-mcp uninstall` | Disconnect every app and remove the installed copy |
-
-Supported apps:
+## Connect your apps
 
 | App | Name for `connect` | Where the setting goes |
 |-----|--------------------|------------------------|
 | Claude Code | `claude-code` | `claude mcp add --scope user` |
-| Codex | `codex` | `%USERPROFILE%\.codex\config.toml` |
+| Codex | `codex` | `~/.codex/config.toml` |
 | VS Code | `vscode` | `%APPDATA%\Code\User\mcp.json` |
 | VS Code Insiders | `vscode-insiders` | `%APPDATA%\Code - Insiders\User\mcp.json` |
 | Claude Desktop | `claude-desktop` | `%APPDATA%\Claude\claude_desktop_config.json` |
-| Cursor | `cursor` | `%USERPROFILE%\.cursor\mcp.json` |
-| Windsurf | `windsurf` | `%USERPROFILE%\.codeium\windsurf\mcp_config.json` |
-| Gemini CLI | `gemini-cli` | `%USERPROFILE%\.gemini\settings.json` |
-| LM Studio | `lm-studio` | `%USERPROFILE%\.lmstudio\mcp.json` |
+| Cursor | `cursor` | `~/.cursor/mcp.json` |
+| Windsurf | `windsurf` | `~/.codeium/windsurf/mcp_config.json` |
+| Gemini CLI | `gemini-cli` | `~/.gemini/settings.json` |
+| LM Studio | `lm-studio` | `~/.lmstudio/mcp.json` |
 | Cline | `cline` | `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json` |
 
-Existing settings stay: only the `linkedin-jobs` entry is added or replaced, and the first change keeps a copy of the
-file next to it (`<file>.linkedin-jobs.bak`). A settings file with comments is left unchanged, and the app prints
-the entry to add instead.
+`connect` only adds or replaces the `linkedin-jobs` entry: other servers and settings stay, and the first change keeps a
+copy of the file next to it (`<file>.linkedin-jobs.bak`). A settings file with comments is left unchanged, and the
+entry to add is printed instead.
 
-#### Connect by hand
+![The server connected in two apps](https://raw.githubusercontent.com/GhoshSrinjoy/linkedin-job-mcp/main/docs/screenshots/connected.png)
+
+### Commands
+
+| Command | What it does |
+|---------|--------------|
+| `linkedin-jobs-mcp` | The setup menu in a console window; the MCP server when an app starts it |
+| `linkedin-jobs-mcp install` | Copy the Windows app to `%LOCALAPPDATA%\Programs\linkedin-jobs-mcp\` and connect the apps found |
+| `linkedin-jobs-mcp connect [app ...]` | Connect the apps found, or only the named ones (also when they are not found) |
+| `linkedin-jobs-mcp disconnect [app ...]` | Remove the connection from every app, or only from the named ones |
+| `linkedin-jobs-mcp status` | Which apps are found and connected |
+| `linkedin-jobs-mcp config [app ...]` | Print the settings to add by hand |
+| `linkedin-jobs-mcp serve [--port 3000] [--host 127.0.0.1]` | REST API plus MCP over HTTP |
+| `linkedin-jobs-mcp mcp` | MCP over stdio (what the connected apps run) |
+| `linkedin-jobs-mcp job <id or URL>` | One job's details as JSON |
+| `linkedin-jobs-mcp search --keyword "data engineer" --location "Berlin, Germany"` | Search from the command line |
+| `linkedin-jobs-mcp uninstall` | Disconnect every app and remove the installed Windows app |
+
+With the Windows app, run them from its folder, for example `.\linkedin-jobs-mcp.exe status`.
+
+### Add it by hand
 
 Every app needs the same thing: the program, started with the `mcp` argument. VS Code (`mcp.json`):
 
@@ -366,12 +133,15 @@ Claude Code:
 claude mcp add --scope user linkedin-jobs -- "C:\Users\you\AppData\Local\Programs\linkedin-jobs-mcp\linkedin-jobs-mcp.exe" mcp
 ```
 
-`linkedin-jobs-mcp config` prints these with the real path.
+Ollama, through [mcp-client-for-ollama](https://github.com/jonigl/mcp-client-for-ollama): save the `mcpServers`
+entry in a file and start `ollmcp -j servers.json`.
 
-#### MCP over HTTP
+`linkedin-jobs-mcp config` prints all of these with the real path.
 
-Apps that connect by URL can use the HTTP server instead: run `linkedin-jobs-mcp serve` (or `npm run api`) and add
-`http://127.0.0.1:3000/mcp`, for example:
+### MCP over HTTP
+
+Apps that connect by URL can use the HTTP server instead. Start `linkedin-jobs-mcp serve` (or `npm run api`) and add
+`http://127.0.0.1:3000/mcp`:
 
 ```bash
 claude mcp add --transport http linkedin-jobs http://127.0.0.1:3000/mcp
@@ -382,198 +152,55 @@ claude mcp add --transport http linkedin-jobs http://127.0.0.1:3000/mcp
 ```
 
 The server listens on this computer only and refuses requests that name another host, so web pages cannot reach it
-through DNS rebinding. `HOST=0.0.0.0` serves other machines (for example from a container); protect it yourself then.
+through DNS rebinding. `HOST=0.0.0.0` makes it reachable from other machines, for example from a container; protect
+it yourself then.
 
-#### Build the app yourself
+## Search options
 
-On Windows with Node.js 20 or newer:
+| Option | Values |
+|--------|--------|
+| `keyword` | Job title or keywords, e.g. `data engineer` |
+| `location` | City, region or country, e.g. `Berlin, Germany` |
+| `city`, `country` | Narrow the location |
+| `geoId` | LinkedIn location id, skips the location lookup |
+| `dateSincePosted` | `past 24 hours`, `past week`, `past month` |
+| `jobType` | `full time`, `part time`, `contract`, `temporary`, `volunteer`, `internship` |
+| `remoteFilter` | `on site`, `remote`, `hybrid` |
+| `salary` | Minimum: `40000`, `60000`, `80000`, `100000`, `120000` |
+| `experienceLevel` | `internship`, `entry level`, `associate`, `senior`, `director`, `executive` |
+| `limit` | Number of jobs (default 10; 25 in the REST API) |
+| `sortBy` | `recent` or `relevant` |
+| `page` | Page number, from 0 |
+| `has_verification` | Verified jobs only |
+| `under_10_applicants` | Jobs with fewer than 10 applicants |
 
-```bash
-npm install
-npm run build:win     # dist/linkedin-jobs-mcp.exe and its SHA-256
-```
+The REST API accepts every option except `salary`, `experienceLevel`, `has_verification` and `under_10_applicants`.
 
-The build bundles the code with esbuild and injects it into a copy of `node.exe` (a Node.js single executable
-application); npx fetches both tools at fixed versions. Pushing a tag such as `v1.1.0` builds the app on GitHub
-Actions and attaches it to the release.
+## Responses
 
-Without the app, from this folder: `npm run app -- connect` registers `node app.js mcp` with the apps found.
+A search returns:
 
-### Prerequisites
-- **Node.js** (v14 or higher)
-- **npm** or **yarn**
-
-### Quick Start
-```bash
-# Clone or download the repository
-cd linkedin-job-mcp
-
-# Install dependencies
-npm install
-
-# Test the basic functionality
-npm test
-```
-
-## 📖 Usage
-
-### Method 1: Direct Script Usage
-
-**Basic Test:**
-```bash
-# Run the test file
-node test.js
-
-# Or use npm script
-npm test
-```
-
-**Custom Search:**
-```bash
-node -e "
-const linkedIn = require('./index.js');
-
-const options = {
-  keyword: 'Data Scientist OR AI Engineer',
-  location: 'New York',
-  dateSincePosted: 'past week',
-  jobType: 'full time',
-  limit: '5'
-};
-
-linkedIn.query(options).then(jobs => {
-  console.log('Found', jobs.length, 'jobs:');
-  jobs.forEach((job, i) => {
-    console.log(\`\${i+1}. \${job.position} at \${job.company}\`);
-    console.log(\`   📍 \${job.location}\`);
-    console.log(\`   🔗 \${job.jobUrl}\`);
-  });
-});
-"
-```
-
-### Method 2: As MCP Server
-
-**1. Start the MCP Server:**
-```bash
-npm start
-# or
-node server.js
-```
-
-**2. Configure in Claude Desktop/MCP Client:**
-
-`npm run app -- connect` does this for every supported app it finds (see [Windows App](#-windows-app-no-nodejs-needed)).
-By hand, add to your MCP configuration file (`claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "linkedin-jobs": {
-      "command": "node",
-      "args": ["server.js"],
-      "cwd": "C:\\path\\to\\linkedin-job-mcp"
-    }
-  }
-}
-```
-
-**3. Use with LLM:**
-
-The server exposes the `search_linkedin_jobs` tool.
-
-**Example LLM queries:**
-- *"Find AI engineer jobs in California posted this week"*
-- *"Search for data scientist positions with 100k+ salary"*
-- *"Get remote machine learning jobs from the past month"*
-
-### Method 3: Programmatic Usage
-
-```javascript
-const linkedIn = require("./index");
-
-async function searchJobs() {
-  const queryOptions = {
-    keyword: "Machine Learning Engineer",
-    location: "San Francisco",
-    dateSincePosted: "past week",
-    jobType: "full time",
-    remoteFilter: "remote",
-    salary: "120000",
-    experienceLevel: "senior",
-    limit: "10",
-    sortBy: "recent"
-  };
-
-  try {
-    const jobs = await linkedIn.query(queryOptions);
-    
-    console.log(`Found ${jobs.length} jobs:`);
-    jobs.forEach(job => {
-      console.log({
-        position: job.position,
-        company: job.company,
-        location: job.location,
-        salary: job.salary,
-        url: job.jobUrl
-      });
-    });
-  } catch (error) {
-    console.error('Error:', error.message);
-  }
-}
-
-searchJobs();
-```
-
-## 🔧 Configuration Parameters
-
-| Parameter | Type | Description | Examples |
-|-----------|------|-------------|----------|
-| `keyword` | string | Job search terms | "software engineer", "data scientist" |
-| `location` | string | Job location (auto-geocoded) | "Berlin", "New York", "Remote" |
-| `dateSincePosted` | string | Time filter | "past month", "past week", "24hr" |
-| `jobType` | string | Employment type | "full time", "part time", "contract" |
-| `remoteFilter` | string | Work arrangement | "on site", "remote", "hybrid" |
-| `salary` | string | Minimum salary | "40000", "60000", "80000", "100000" |
-| `experienceLevel` | string | Experience required | "entry level", "senior", "director" |
-| `limit` | string | Max results | "5", "10", "25" |
-| `sortBy` | string | Sort order | "recent", "relevant" |
-| `page` | string | Page number | "0", "1", "2" |
-| `has_verification` | boolean | Verified jobs only | true, false |
-| `under_10_applicants` | boolean | Low competition jobs | true, false |
-
-## 📊 Response Format
-
-### MCP Server Response
 ```json
 {
   "success": true,
-  "total_jobs": 5,
+  "total_jobs": 1,
   "jobs": [
     {
-      "position": "Senior AI Engineer",
-      "company": "TechCorp",
-      "location": "San Francisco, CA",
-      "date": "2025-08-12",
-      "agoTime": "1 day ago", 
-      "salary": "$150,000 - $200,000",
-      "jobUrl": "https://linkedin.com/jobs/view/123456",
-      "companyLogo": "https://example.com/logo.jpg"
+      "position": "Data Engineer (m/w/d)",
+      "company": "Example GmbH",
+      "location": "Berlin, Berlin, Germany",
+      "date": "2026-10-20",
+      "agoTime": "4 days ago",
+      "salary": "Not specified",
+      "jobUrl": "https://www.linkedin.com/jobs/view/1234567890/",
+      "companyLogo": "https://media.licdn.com/…"
     }
   ],
-  "search_params": {
-    "keyword": "AI Engineer",
-    "location": "San Francisco",
-    "limit": "5"
-  }
+  "search_params": { "keyword": "data engineer", "location": "Berlin, Germany", "limit": "10" }
 }
 ```
 
-### Job Details Response
-
-`GET /job/1234567890` (REST), the `get_linkedin_job_details` tool (MCP) or `linkedIn.getJobDetails(idOrUrl)`
-(library) read the public job page. Requests run one at a time, at least `LINKEDIN_DETAIL_MIN_INTERVAL_MS` apart,
-and each job is cached for `LINKEDIN_DETAIL_CACHE_TTL_MS`.
+Job details return:
 
 ```json
 {
@@ -595,180 +222,69 @@ and each job is cached for `LINKEDIN_DETAIL_CACHE_TTL_MS`.
 }
 ```
 
-A job LinkedIn no longer has returns HTTP 404 with `{ "id": "…", "removed": true }`; an invalid id or URL returns
-HTTP 400.
+A job LinkedIn no longer has returns `{ "id": "…", "removed": true }`.
 
-### Direct Usage Response
-```javascript
-[
-  {
-    position: 'Machine Learning Engineer',
-    company: 'OpenAI',
-    location: 'San Francisco, CA',
-    date: '2025-08-12',
-    salary: 'Not specified',
-    jobUrl: 'https://linkedin.com/jobs/view/789012',
-    companyLogo: 'https://media.licdn.com/...',
-    agoTime: '2 hours ago'
-  }
-]
+## REST API
+
+`npm run api` or `linkedin-jobs-mcp serve` starts it on `http://127.0.0.1:3000`.
+
+| Endpoint | What it does |
+|----------|--------------|
+| `POST /search` | Search, with the options above as a JSON body; returns `{ "cached", "total", "jobs" }` |
+| `GET /job/:id`, `GET /job?url=<link>` | One job's details; 404 when LinkedIn no longer has it, 400 for an invalid id or link |
+| `POST /mcp` | MCP over Streamable HTTP |
+| `GET /health` | `{ "ok": true }` |
+
+## Library
+
+```js
+const { query, getJobDetails } = require("linkedin-jobs-mcp");
+
+const jobs = await query({ keyword: "data engineer", location: "Berlin, Germany", limit: "10" });
+const job = await getJobDetails("https://www.linkedin.com/jobs/view/1234567890/");
 ```
 
-## ⚡ Performance Features
+## Configuration
 
-- **🚀 Caching**: 1-hour result caching for faster repeated searches
-- **🛡️ Rate Limiting**: 2-3 second delays between requests  
-- **🔄 Auto-retry**: Exponential backoff on errors (max 3 retries)
-- **🌍 Geocoding**: Dynamic location standardization via OpenStreetMap
-- **🎯 Smart Filtering**: Location-based job filtering for better results
+Set these in the environment or in a `.env` file in the folder you start it from.
 
-## 🐛 Troubleshooting
+| Variable | Default | What it sets |
+|----------|---------|--------------|
+| `PORT` | `3000` | Port of the REST API and MCP over HTTP |
+| `HOST` | `127.0.0.1` | Address the server listens on |
+| `LINKEDIN_REQUEST_TIMEOUT_MS` | `15000` | Timeout of one request to LinkedIn |
+| `LINKEDIN_CACHE_TTL_MS` | `3600000` | How long search results stay cached |
+| `LINKEDIN_DETAIL_MIN_INTERVAL_MS` | `1500` | Minimum gap between two job-page requests |
+| `LINKEDIN_DETAIL_CACHE_TTL_MS` | `21600000` | How long job details stay cached |
+| `LINKEDIN_USER_AGENT` | | User agent for job-page requests |
+| `API_RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window of the REST API |
+| `API_RATE_LIMIT_MAX` | `60` | Requests per window and address |
 
-### Common Issues
+## Build the Windows app
 
-**1. Bot Detection / Redirect Loops (ERR_TOO_MANY_REDIRECTS)**
-```
-⚠️ LinkedIn detected automation and is causing redirect loops
-Solutions:
-- This is expected behavior with current LinkedIn protection
-- Consider using alternative job platforms
-- Manual browsing remains most reliable
-- Try different IP addresses (residential vs data center)
-```
+On Windows with Node.js 20 or newer:
 
-**2. Empty Results or Blocked Requests**
-```
-⚠️ API endpoints returning empty HTML or blocking entirely
-Reasons:
-- LinkedIn's anti-bot systems are active globally
-- Not specific to EU/GDPR - affects all regions
-- Session cookies may trigger additional scrutiny
-- WebDriver detection despite stealth measures
-```
-
-**3. Authentication Issues**
 ```bash
-# Test without authentication cookies first
-// linkedIn.setAuth('...', '...'); // Comment this out
-
-# Authentication may increase detection likelihood
-# LinkedIn tracks automated usage of authenticated sessions
-```
-
-**4. Installation Issues**
-```bash
-# Clear npm cache
-npm cache clean --force
-
-# Reinstall dependencies
-rm -rf node_modules package-lock.json
 npm install
+npm run build:win     # dist/linkedin-jobs-mcp.exe and its SHA-256
 ```
 
-**5. MCP Server Connection Issues**
-- Ensure correct file paths in configuration
-- Check Node.js is in PATH
-- Verify MCP client supports the protocol version
+The build bundles the code with esbuild and injects it into a copy of `node.exe` (a Node.js single executable
+application). Pushing a tag such as `v1.1.0` builds the app on GitHub Actions and attaches it to a release.
 
-### Debug Mode
+## Tests
+
 ```bash
-# Enable verbose logging
-DEBUG=linkedin-jobs node test.js
-
-# Test specific location
-node -e "console.log(require('./index.js').query({keyword:'test', location:'Tokyo', limit:'1'}))"
+npm test
 ```
 
-## 📝 Examples
+The tests run offline: job-page parsing, settings files, the MCP server and the HTTP API.
 
-### Search AI Jobs in US
-```bash
-node -e "
-require('./index.js').query({
-  keyword: 'Artificial Intelligence OR Machine Learning',
-  location: 'United States',
-  dateSincePosted: 'past week',
-  jobType: 'full time',
-  salary: '100000',
-  limit: '10'
-}).then(jobs => console.log('Found:', jobs.length, 'AI jobs'))
-"
-```
+## Responsible use
 
-### Remote Data Science Positions
-```bash
-node -e "
-require('./index.js').query({
-  keyword: 'Data Scientist',
-  remoteFilter: 'remote',
-  dateSincePosted: 'past month',
-  experienceLevel: 'senior',
-  limit: '15'
-}).then(jobs => {
-  const remote = jobs.filter(j => j.location.toLowerCase().includes('remote'));
-  console.log('Remote jobs:', remote.length);
-})
-"
-```
+The tools read public job pages slowly and cache what they read, for personal job searching and research. Automated
+access can conflict with LinkedIn's User Agreement, so keep the volume low and use it at your own risk.
 
-## 📋 TODO / Roadmap
+## License
 
-- [ ] Add support for more job sites (Indeed, Glassdoor)
-- [ ] Implement job alert/monitoring functionality  
-- [ ] Add job description content extraction
-- [ ] Create web dashboard for job management
-- [ ] Add email notification system
-- [ ] Implement job application tracking
-
-## ⚖️ Legal & Ethics
-
-This tool is designed for:
-- ✅ **Educational purposes**
-- ✅ **Personal job searching**  
-- ✅ **Research and analysis**
-
-**Not intended for:**
-- ❌ Commercial data harvesting
-- ❌ Bulk profile scraping
-- ❌ Violation of terms of service
-- ❌ Personal data collection
-
-*Users must comply with LinkedIn's Terms of Service, applicable data protection laws (GDPR, CCPA), and respect rate limits.*
-
-## Skills  
-
-This project demonstrates Node.js backend development, web automation defense handling, dynamic geocoding, caching, rate limiting, and MCP integration for LLMs.  
-It’s a hands-on example of bridging job-market data and AI reasoning — responsibly. 🧠  
-
----
-
-## Results & Business Recommendation  
-
-**What it delivers**  
-- Structured job data in JSON format  
-- Geocoded, filterable search results  
-- Fast performance with caching  
-- Educational transparency about automation risks  
-
-**Recommended use cases**  
-- Personal job dashboards  
-- Research projects on labor markets  
-- LLM-based personal assistants  
-- Ethical web automation studies
----
-
-## 👤 Author
-
-**Srinjoy Ghosh**
-- GitHub: [@srinjoy-ghosh](https://github.com/srinjoy-ghosh)
-- Email: ghoshsrinjoy97@gmail.com
-
-## 📄 License
-
-Apache License - see [LICENSE](LICENSE) file for details
-
----
-
-⭐ **Star this repo** if you find it useful!
-🐛 **Report issues** on GitHub
-💬 **Contribute** via pull requests
+[Apache 2.0](https://github.com/GhoshSrinjoy/linkedin-job-mcp/blob/main/LICENSE) · Srinjoy Ghosh ([@GhoshSrinjoy](https://github.com/GhoshSrinjoy), ghoshsrinjoy97@gmail.com)

@@ -49,7 +49,12 @@ const samePath = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toL
 function launchCommand(exe) {
   if (exe) return { command: exe, args: ["mcp"] };
   if (isSea()) return { command: process.execPath, args: ["mcp"] };
-  return { command: process.execPath, args: [path.resolve(process.argv[1]), "mcp"] };
+  // started through npx: its cache folder can be cleared, so the apps start it through npx too
+  if (/[\\/]_npx[\\/]/.test(__dirname)) {
+    const npx = ["npx", "-y", APP, "mcp"];
+    return process.platform === "win32" ? { command: "cmd", args: ["/c", ...npx] } : { command: npx[0], args: npx.slice(1) };
+  }
+  return { command: process.execPath, args: [__filename, "mcp"] };
 }
 
 // The program connected apps should run: the installed copy once there is one
@@ -144,7 +149,7 @@ function printConfig(clients, cmd = preferredCommand()) {
 
 function install() {
   if (!isSea()) {
-    console.log("install sets up the Windows app. From the source folder, connect your apps with: npm run app -- connect");
+    console.log("install is for the Windows app. Connect your apps with: linkedin-jobs-mcp connect");
     return;
   }
   const target = installedExe();

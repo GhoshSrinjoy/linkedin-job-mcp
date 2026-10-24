@@ -158,9 +158,10 @@ function startApi(port = API_PORT, host = API_HOST) {
   app.get("/mcp", methodNotAllowed);
   app.delete("/mcp", methodNotAllowed);
   const shown = host.includes(":") ? `[${host}]` : host;
-  return app.listen(port, host, () => {
-    console.error(`LinkedIn Jobs API listening on http://${shown}:${port} (MCP over HTTP at /mcp)`);
+  const server = app.listen(port, host, () => {
+    console.error(`LinkedIn Jobs API listening on http://${shown}:${server.address().port} (MCP over HTTP at /mcp)`);
   });
+  return server;
 }
 
 module.exports = { app, startApi };

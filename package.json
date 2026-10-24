@@ -1,28 +1,49 @@
 {
   "name": "linkedin-jobs-mcp",
   "version": "1.1.0",
-  "description": "MCP server for LinkedIn job scraping",
-  "main": "server.js",
+  "description": "LinkedIn job search and job details over MCP, with a Windows app that connects itself to MCP clients",
+  "main": "index.js",
   "bin": {
-    "linkedin-jobs-mcp": "server.js",
+    "linkedin-jobs-mcp": "app.js",
     "linkedin-jobs": "bin/linkedin-jobs.js"
   },
+  "files": [
+    "index.js",
+    "server.js",
+    "api.js",
+    "app.js",
+    "clients.js",
+    "config.js",
+    "bin/"
+  ],
   "scripts": {
-    "test": "node test.js",
+    "test": "node --test test/app.test.js",
     "start": "node server.js",
     "api": "node api.js",
     "app": "node app.js",
     "build:win": "node scripts/build-win.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "linkedin",
     "jobs",
-    "server",
-    "scraping"
+    "job-search",
+    "mcp-server"
   ],
   "author": "Srinjoy Ghosh",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GhoshSrinjoy/linkedin-job-mcp.git"
+  },
+  "homepage": "https://github.com/GhoshSrinjoy/linkedin-job-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/GhoshSrinjoy/linkedin-job-mcp/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
     "axios": "^1.13.2",
