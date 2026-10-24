@@ -6,7 +6,7 @@ VS Code and other MCP clients; the same tools also come as an npm package, a RES
 [![npm version](https://img.shields.io/npm/v/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
 [![npm downloads](https://img.shields.io/npm/dm/linkedin-jobs-mcp.svg)](https://www.npmjs.com/package/linkedin-jobs-mcp)
 [![CI](https://github.com/GhoshSrinjoy/linkedin-job-mcp/actions/workflows/node.js.yml/badge.svg)](https://github.com/GhoshSrinjoy/linkedin-job-mcp/actions/workflows/node.js.yml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/GhoshSrinjoy/linkedin-job-mcp/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/GhoshSrinjoy/linkedin-job-mcp/blob/main/LICENSE)
 
 ![The setup menu of the Windows app](https://raw.githubusercontent.com/GhoshSrinjoy/linkedin-job-mcp/main/docs/screenshots/setup-menu.png)
 
@@ -270,7 +270,7 @@ npm run build:win     # dist/linkedin-jobs-mcp.exe and its SHA-256
 ```
 
 The build bundles the code with esbuild and injects it into a copy of `node.exe` (a Node.js single executable
-application). Pushing a tag such as `v1.1.0` builds the app on GitHub Actions and attaches it to a release.
+application). Pushing a tag such as `v1.2.0` builds the app on GitHub Actions and attaches it to a release.
 
 ## Tests
 
@@ -287,4 +287,6 @@ access can conflict with LinkedIn's User Agreement, so keep the volume low and u
 
 ## License
 
-[Apache 2.0](https://github.com/GhoshSrinjoy/linkedin-job-mcp/blob/main/LICENSE) · Srinjoy Ghosh ([@GhoshSrinjoy](https://github.com/GhoshSrinjoy), ghoshsrinjoy97@gmail.com)
+[PolyForm Noncommercial 1.0.0](https://github.com/GhoshSrinjoy/linkedin-job-mcp/blob/main/LICENSE): free for personal, research and other non-commercial use. For commercial use, ask for permission.
+
+Srinjoy Ghosh ([@GhoshSrinjoy](https://github.com/GhoshSrinjoy), ghoshsrinjoy97@gmail.com)

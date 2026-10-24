@@ -1,6 +1,6 @@
 {
   "name": "linkedin-jobs-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "LinkedIn job search and job details over MCP, with a Windows app that connects itself to MCP clients",
   "main": "index.js",
   "bin": {
@@ -35,7 +35,7 @@
     "mcp-server"
   ],
   "author": "Srinjoy Ghosh",
-  "license": "Apache-2.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GhoshSrinjoy/linkedin-job-mcp.git"
