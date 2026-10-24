@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Ghost Job Radar capture",
+  "version": "0.1.0",
+  "description": "Check the job you are viewing with your local Ghost Job Radar: applicant count, reposts, ghost-risk grade.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Check this job with Ghost Job Radar"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"]
+}

@@ -1,0 +1,348 @@
+From 50cfe1bd779f080bccb2595abf890e915df09718 Mon Sep 17 00:00:00 2001
+From: Srinjoy Ghosh <134691457+GhoshSrinjoy@users.noreply.github.com>
+Date: Sat, 24 Oct 2026 15:32:29 +0200
+Subject: [PATCH] Add job details endpoint and MCP tool
+
+GET /job/:id and GET /job?url=<job link> return one job's full
+description, criteria (seniority, employment type, job function,
+industries), posted time, the applicant count shown on the page and
+whether it still accepts applications. Removed jobs return 404 with
+{ removed: true }; an invalid id or link returns 400.
+
+The get_linkedin_job_details tool and getJobDetails() expose the same
+data to MCP clients and library users. Requests run one at a time with
+a fixed user agent, at least LINKEDIN_DETAIL_MIN_INTERVAL_MS apart
+(default 1.5 s), and each job is cached for
+LINKEDIN_DETAIL_CACHE_TTL_MS (default 6 hours).
+---
+ README.md |  33 +++++++++++++
+ api.js    |  16 ++++++-
+ config.js |   3 ++
+ index.js  | 137 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ server.js |  31 ++++++++++++
+ 5 files changed, 218 insertions(+), 2 deletions(-)
+
+diff --git a/README.md b/README.md
+index aa0b91b..80cdc2b 100644
+--- a/README.md
++++ b/README.md
+@@ -47,6 +47,7 @@ This project provides a transparent, research-oriented framework for safe and co
+ #### 1. **MCP Server for Claude Desktop** (`server.js`)
+ - ✅ Full Model Context Protocol implementation
+ - ✅ Exposes `search_linkedin_jobs` tool to Claude and other MCP clients
++- ✅ `get_linkedin_job_details` tool: one job's full description, criteria and applicant count
+ - ✅ Stdio transport for seamless integration
+ - ✅ Auto-discovery by MCP-compatible clients
+ - **Usage**: `npm start` → Configure in `claude_desktop_config.json`
+@@ -62,6 +63,7 @@ This project provides a transparent, research-oriented framework for safe and co
+ #### 3. **REST API Server** (`api.js`)
+ - ✅ Express.js REST API with rate limiting
+ - ✅ `POST /search` - Job search with JSON body
++- ✅ `GET /job/:id` or `GET /job?url=<job link>` - One job's full description, criteria and applicant count
+ - ✅ `GET /health` - Health check endpoint
+ - ✅ Configurable rate limits and timeouts
+ - ✅ CORS enabled for web applications
+@@ -121,6 +123,8 @@ This project provides a transparent, research-oriented framework for safe and co
+   - `PORT` - API server port
+   - `API_RATE_LIMIT_WINDOW_MS` - Rate limit window
+   - `API_RATE_LIMIT_MAX` - Max requests per window
++  - `LINKEDIN_DETAIL_MIN_INTERVAL_MS` - Minimum gap between job-detail page requests (default 1500)
++  - `LINKEDIN_DETAIL_CACHE_TTL_MS` - How long job details stay cached (default 6 hours)
+ - **Stealth Measures**: Random user agents, realistic headers
+ - **Session Management**: Cookie-based authentication support
+ 
+@@ -444,6 +448,35 @@ searchJobs();
+ }
+ ```
+ 
++### Job Details Response
++
++`GET /job/1234567890` (REST), the `get_linkedin_job_details` tool (MCP) or `linkedIn.getJobDetails(idOrUrl)`
++(library) read the public job page. Requests run one at a time, at least `LINKEDIN_DETAIL_MIN_INTERVAL_MS` apart,
++and each job is cached for `LINKEDIN_DETAIL_CACHE_TTL_MS`.
++
++```json
++{
++  "id": "1234567890",
++  "position": "Data Engineer (m/w/d)",
++  "company": "Example GmbH",
++  "location": "Berlin, Berlin, Germany",
++  "postedAgo": "3 weeks ago",
++  "applicants": "Over 200 applicants",
++  "salary": null,
++  "seniority": "Mid-Senior level",
++  "employmentType": "Full-time",
++  "jobFunction": null,
++  "industries": "Software Development",
++  "criteria": { "Seniority level": "Mid-Senior level", "Employment type": "Full-time", "Industries": "Software Development" },
++  "acceptingApplications": true,
++  "description": "We are looking for a data engineer to join our platform team. …",
++  "jobUrl": "https://www.linkedin.com/jobs/view/1234567890/"
++}
++```
++
++A job LinkedIn no longer has returns HTTP 404 with `{ "id": "…", "removed": true }`; an invalid id or URL returns
++HTTP 400.
++
+ ### Direct Usage Response
+ ```javascript
+ [
+diff --git a/api.js b/api.js
+index 7f1b1aa..3371522 100644
+--- a/api.js
++++ b/api.js
+@@ -1,5 +1,5 @@
+ const express = require("express");
+-const { query } = require("./index");
++const { query, getJobDetails } = require("./index");
+ const {
+   API_PORT,
+   RATE_LIMIT_WINDOW_MS,
+@@ -104,6 +104,20 @@ app.post("/search", rateLimit, async (req, res) => {
+   }
+ });
+ 
++// Job details by id (GET /job/1234567890) or by URL (GET /job?url=https://www.linkedin.com/jobs/view/...)
++async function sendJob(ref, res) {
++  try {
++    const job = await getJobDetails(ref);
++    res.status(job.removed ? 404 : 200).json(job);
++  } catch (err) {
++    console.error("API error:", err.message);
++    res.status(err.status || 500).json({ error: err.message || "Unknown error" });
++  }
++}
++
++app.get("/job/:id", rateLimit, (req, res) => sendJob(req.params.id, res));
++app.get("/job", rateLimit, (req, res) => sendJob(req.query.url || req.query.id, res));
++
+ app.listen(API_PORT, () => {
+   console.log(`LinkedIn Jobs API listening on http://localhost:${API_PORT}`);
+ });
+diff --git a/config.js b/config.js
+index 3b688ee..d12d5d0 100644
+--- a/config.js
++++ b/config.js
+@@ -14,4 +14,7 @@ module.exports = {
+   API_PORT: intFromEnv("PORT", 3000),
+   RATE_LIMIT_WINDOW_MS: intFromEnv("API_RATE_LIMIT_WINDOW_MS", 60_000),
+   RATE_LIMIT_MAX: intFromEnv("API_RATE_LIMIT_MAX", 60),
++  // job details: one page at a time, at least this far apart, cached for this long
++  DETAIL_MIN_INTERVAL_MS: intFromEnv("LINKEDIN_DETAIL_MIN_INTERVAL_MS", 1500),
++  DETAIL_CACHE_TTL_MS: intFromEnv("LINKEDIN_DETAIL_CACHE_TTL_MS", 6 * 60 * 60 * 1000),
+ };
+diff --git a/index.js b/index.js
+index ed33fe0..73dd2fd 100644
+--- a/index.js
++++ b/index.js
+@@ -5,6 +5,8 @@ const {
+   USER_AGENT,
+   REQUEST_TIMEOUT_MS,
+   CACHE_TTL_MS,
++  DETAIL_MIN_INTERVAL_MS,
++  DETAIL_CACHE_TTL_MS,
+ } = require("./config");
+ 
+ // Simple delay helper for retries/backoff
+@@ -305,6 +307,133 @@ async function query(queryObject = {}) {
+   return trimmed;
+ }
+ 
++// ---------------------------------------------------------------------------
++// Job details: the public (guest) job page with the full description
++// ---------------------------------------------------------------------------
++const JOB_URL = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting";
++const detailCache = new JobCache();
++detailCache.TTL = DETAIL_CACHE_TTL_MS;
++let detailQueue = Promise.resolve();
++let lastDetailAt = 0;
++
++// Accepts a job id or any LinkedIn job URL (jobs/view/<slug>-<id>, ?currentJobId=<id>)
++function jobIdFrom(input) {
++  const text = normalizeStr(String(input || ""));
++  const match =
++    text.match(/^(\d{6,})$/) ||
++    text.match(/currentJobId=(\d{6,})/) ||
++    text.match(/jobs\/view\/(?:[^/?#]*-)?(\d{6,})/) ||
++    text.match(/jobPosting\/(\d{6,})/);
++  return match ? match[1] : null;
++}
++
++function cleanText($, el) {
++  const node = $(el).clone();
++  node.find("br").replaceWith("\n");
++  node.find("li").each((_, li) => {
++    $(li).prepend("• ");
++    $(li).append("\n");
++  });
++  node.find("p, ul, ol, h1, h2, h3, h4").each((_, block) => $(block).append("\n"));
++  return node
++    .text()
++    .replace(/[ \t ]+/g, " ")
++    .replace(/ *\n */g, "\n")
++    .replace(/\n{3,}/g, "\n\n")
++    .trim();
++}
++
++function parseJobPage(html, id) {
++  const $ = cheerio.load(html);
++  const text = (selector) => $(selector).first().text().replace(/\s+/g, " ").trim();
++  const criteria = {};
++  $(".description__job-criteria-item").each((_, el) => {
++    const key = $(el).find(".description__job-criteria-subheader").text().replace(/\s+/g, " ").trim();
++    const value = $(el).find(".description__job-criteria-text").text().replace(/\s+/g, " ").trim();
++    if (key && value) criteria[key] = value;
++  });
++  const markup = $(".show-more-less-html__markup").first();
++  return {
++    id,
++    position: text(".top-card-layout__title, .topcard__title"),
++    company: text(".topcard__org-name-link, .topcard__flavor a"),
++    location: text(".topcard__flavor--bullet"),
++    postedAgo: text(".posted-time-ago__text") || null,
++    applicants: text(".num-applicants__caption, .num-applicants__figure") || null,
++    salary: text(".salary, .compensation__salary") || null,
++    seniority: criteria["Seniority level"] || null,
++    employmentType: criteria["Employment type"] || null,
++    jobFunction: criteria["Job function"] || null,
++    industries: criteria["Industries"] || null,
++    criteria,
++    acceptingApplications: !/no longer accepting applications/i.test($("body").text()),
++    description: markup.length ? cleanText($, markup) : "",
++    jobUrl: `https://www.linkedin.com/jobs/view/${id}/`,
++  };
++}
++
++async function fetchJobPage(id, attempt = 1) {
++  const resp = await axios.get(`${JOB_URL}/${id}`, {
++    headers: {
++      "User-Agent": DEFAULT_USER_AGENT,
++      "Accept-Language": "en-US,en;q=0.9",
++      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
++    },
++    timeout: REQUEST_TIMEOUT_MS,
++    validateStatus: (s) => s >= 200 && s < 500,
++  });
++  if ((resp.status === 429 || resp.status === 999) && attempt < 2) {
++    await delay(3000);
++    return fetchJobPage(id, attempt + 1);
++  }
++  return resp;
++}
++
++/**
++ * Full details of one job: description, criteria, posted time and the applicant count shown on the page.
++ * Requests run one at a time, at least DETAIL_MIN_INTERVAL_MS apart, and are cached for DETAIL_CACHE_TTL_MS.
++ * Returns { id, removed: true } when LinkedIn no longer has the job.
++ */
++async function getJobDetails(input) {
++  const id = jobIdFrom(input);
++  if (!id) {
++    const err = new Error("Give a LinkedIn job id or a LinkedIn job URL");
++    err.status = 400;
++    throw err;
++  }
++  const cached = detailCache.get(id);
++  if (cached) return { ...cached, cached: true };
++  const run = async () => {
++    const again = detailCache.get(id);
++    if (again) return { ...again, cached: true };
++    const wait = lastDetailAt + DETAIL_MIN_INTERVAL_MS - Date.now();
++    if (wait > 0) await delay(wait);
++    lastDetailAt = Date.now();
++    const resp = await fetchJobPage(id);
++    if (resp.status === 404 || resp.status === 410) {
++      const gone = { id, removed: true, jobUrl: `https://www.linkedin.com/jobs/view/${id}/` };
++      detailCache.set(id, gone);
++      return gone;
++    }
++    if (resp.status >= 400) {
++      const err = new Error(`LinkedIn returned HTTP ${resp.status}`);
++      err.status = resp.status === 429 || resp.status === 999 ? 429 : 502;
++      throw err;
++    }
++    const job = parseJobPage(resp.data, id);
++    if (!job.position) {
++      const err = new Error("The job page had no job data (layout change or a block page)");
++      err.status = 502;
++      throw err;
++    }
++    detailCache.set(id, job);
++    return job;
++  };
++  const result = detailQueue.then(run, run);
++  detailQueue = result.catch(() => {});
++  return result;
++}
++
+ // Stub kept for compatibility; guest endpoint does not need auth
+ function setAuth(jsessionid, li_at) {
+   console.log(
+@@ -315,8 +444,14 @@ function setAuth(jsessionid, li_at) {
+ 
+ module.exports = {
+   query,
++  getJobDetails,
++  jobIdFrom,
++  parseJobPage,
+   JobCache,
+-  clearCache: () => cache.clear(),
++  clearCache: () => {
++    cache.clear();
++    detailCache.clear();
++  },
+   getCacheSize: () => cache.cache.size,
+   setAuth,
+ };
+diff --git a/server.js b/server.js
+index 0db3c11..e144b71 100644
+--- a/server.js
++++ b/server.js
+@@ -120,6 +120,22 @@ class LinkedInJobsServer {
+               },
+             },
+           },
++          {
++            name: "get_linkedin_job_details",
++            description:
++              "Get one LinkedIn job's full description, criteria (seniority, employment type, industries), " +
++              "posted time and the applicant count shown on the public job page",
++            inputSchema: {
++              type: "object",
++              properties: {
++                job: {
++                  type: "string",
++                  description: "LinkedIn job id (e.g. '1234567890') or job URL",
++                },
++              },
++              required: ["job"],
++            },
++          },
+         ],
+       };
+     });
+@@ -191,6 +207,21 @@ class LinkedInJobsServer {
+         }
+       }
+ 
++      if (name === "get_linkedin_job_details") {
++        try {
++          const job = await linkedIn.getJobDetails(args.job);
++          return {
++            content: [{ type: "text", text: JSON.stringify({ success: !job.removed, ...job }, null, 2) }],
++          };
++        } catch (error) {
++          console.error("Error in job details:", error);
++          return {
++            content: [{ type: "text", text: JSON.stringify({ success: false, error: error.message, job: args.job }, null, 2) }],
++            isError: true,
++          };
++        }
++      }
++
+       throw new Error(`Unknown tool: ${name}`);
+     });
+   }
+-- 
+2.39.2.windows.1
+
