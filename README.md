@@ -65,6 +65,7 @@ This project provides a transparent, research-oriented framework for safe and co
 - ✅ `POST /search` - Job search with JSON body
 - ✅ `GET /job/:id` or `GET /job?url=<job link>` - One job's full description, criteria and applicant count
 - ✅ `GET /health` - Health check endpoint
+- ✅ `POST /mcp` - The same MCP tools over Streamable HTTP, for apps that connect by URL
 - ✅ Configurable rate limits and timeouts
 - ✅ CORS enabled for web applications
 - **Usage**: `npm run api` → `http://localhost:3000`
@@ -82,6 +83,13 @@ This project provides a transparent, research-oriented framework for safe and co
 - ✅ Direct programmatic access
 - ✅ Use in custom Node.js applications
 - **Usage**: `const jobs = await linkedIn.query({keyword, location})`
+
+#### 6. **Windows App** (`app.js`)
+- ✅ One `.exe` with Node.js inside: nothing else to install
+- ✅ No window of its own: the apps you connect start it in the background
+- ✅ Connects itself to the MCP apps it finds, keeping their other settings
+- ✅ Also runs the REST API and MCP over HTTP (`serve`)
+- **Usage**: download `linkedin-jobs-mcp.exe` from the releases page and double-click it (see [Windows App](#-windows-app-no-nodejs-needed))
 
 ### 🔍 Search & Filtering Capabilities
 
@@ -121,6 +129,7 @@ This project provides a transparent, research-oriented framework for safe and co
   - `LINKEDIN_REQUEST_TIMEOUT_MS` - Request timeout
   - `LINKEDIN_CACHE_TTL_MS` - Cache duration
   - `PORT` - API server port
+  - `HOST` - Address the API listens on (default `127.0.0.1`, this computer only; `0.0.0.0` serves other machines)
   - `API_RATE_LIMIT_WINDOW_MS` - Rate limit window
   - `API_RATE_LIMIT_MAX` - Max requests per window
   - `LINKEDIN_DETAIL_MIN_INTERVAL_MS` - Minimum gap between job-detail page requests (default 1500)
@@ -279,6 +288,117 @@ This tool includes:
 
 ## 🚀 Installation & Setup
 
+### 🪟 Windows App (no Node.js needed)
+
+Download `linkedin-jobs-mcp.exe` from the [releases page](https://github.com/GhoshSrinjoy/linkedin-job-mcp/releases).
+It is one file with Node.js inside and has no window of its own: the apps you connect start it in the background
+whenever they need the job tools.
+
+1. Double-click `linkedin-jobs-mcp.exe`. The file is not code-signed, so Windows may say "Windows protected your
+   PC": choose **More info → Run anyway**.
+2. Choose **1 Install and connect the apps found**. The app copies itself to
+   `%LOCALAPPDATA%\Programs\linkedin-jobs-mcp\` and adds itself to every supported app it finds.
+3. Restart those apps (or reload their MCP servers). `search_linkedin_jobs` and `get_linkedin_job_details` are
+   then available.
+
+The same from a terminal:
+
+| Command | What it does |
+|---------|--------------|
+| `linkedin-jobs-mcp install` | Copy the app to `%LOCALAPPDATA%\Programs\linkedin-jobs-mcp\` and connect the apps found |
+| `linkedin-jobs-mcp connect [app ...]` | Connect the apps found, or only the named ones (also when not found) |
+| `linkedin-jobs-mcp disconnect [app ...]` | Remove the connection from every app, or only from the named ones |
+| `linkedin-jobs-mcp status` | Which apps are found and connected, and to which program |
+| `linkedin-jobs-mcp config [app ...]` | Print the settings to add by hand |
+| `linkedin-jobs-mcp serve [--port 3000] [--host 127.0.0.1]` | REST API plus MCP over HTTP at `http://127.0.0.1:3000/mcp` |
+| `linkedin-jobs-mcp mcp` | MCP over stdio (what the connected apps run) |
+| `linkedin-jobs-mcp job <id or URL>` | One job's details as JSON |
+| `linkedin-jobs-mcp search --keyword "data engineer" --location "Berlin, Germany"` | Search, with the same options as `linkedin-jobs` |
+| `linkedin-jobs-mcp uninstall` | Disconnect every app and remove the installed copy |
+
+Supported apps:
+
+| App | Name for `connect` | Where the setting goes |
+|-----|--------------------|------------------------|
+| Claude Code | `claude-code` | `claude mcp add --scope user` |
+| Codex | `codex` | `%USERPROFILE%\.codex\config.toml` |
+| VS Code | `vscode` | `%APPDATA%\Code\User\mcp.json` |
+| VS Code Insiders | `vscode-insiders` | `%APPDATA%\Code - Insiders\User\mcp.json` |
+| Claude Desktop | `claude-desktop` | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Cursor | `cursor` | `%USERPROFILE%\.cursor\mcp.json` |
+| Windsurf | `windsurf` | `%USERPROFILE%\.codeium\windsurf\mcp_config.json` |
+| Gemini CLI | `gemini-cli` | `%USERPROFILE%\.gemini\settings.json` |
+| LM Studio | `lm-studio` | `%USERPROFILE%\.lmstudio\mcp.json` |
+| Cline | `cline` | `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json` |
+
+Existing settings stay: only the `linkedin-jobs` entry is added or replaced, and the first change keeps a copy of the
+file next to it (`<file>.linkedin-jobs.bak`). A settings file with comments is left unchanged, and the app prints
+the entry to add instead.
+
+#### Connect by hand
+
+Every app needs the same thing: the program, started with the `mcp` argument. VS Code (`mcp.json`):
+
+```json
+{
+  "servers": {
+    "linkedin-jobs": {
+      "type": "stdio",
+      "command": "C:\\Users\\you\\AppData\\Local\\Programs\\linkedin-jobs-mcp\\linkedin-jobs-mcp.exe",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Claude Desktop, Cursor, Windsurf, Gemini CLI, LM Studio and Cline take the same entry under `"mcpServers"`, without
+`"type"`. Codex (`config.toml`):
+
+```toml
+[mcp_servers.linkedin-jobs]
+command = "C:\\Users\\you\\AppData\\Local\\Programs\\linkedin-jobs-mcp\\linkedin-jobs-mcp.exe"
+args = ["mcp"]
+```
+
+Claude Code:
+
+```bash
+claude mcp add --scope user linkedin-jobs -- "C:\Users\you\AppData\Local\Programs\linkedin-jobs-mcp\linkedin-jobs-mcp.exe" mcp
+```
+
+`linkedin-jobs-mcp config` prints these with the real path.
+
+#### MCP over HTTP
+
+Apps that connect by URL can use the HTTP server instead: run `linkedin-jobs-mcp serve` (or `npm run api`) and add
+`http://127.0.0.1:3000/mcp`, for example:
+
+```bash
+claude mcp add --transport http linkedin-jobs http://127.0.0.1:3000/mcp
+```
+
+```json
+{ "servers": { "linkedin-jobs": { "type": "http", "url": "http://127.0.0.1:3000/mcp" } } }
+```
+
+The server listens on this computer only and refuses requests that name another host, so web pages cannot reach it
+through DNS rebinding. `HOST=0.0.0.0` serves other machines (for example from a container); protect it yourself then.
+
+#### Build the app yourself
+
+On Windows with Node.js 20 or newer:
+
+```bash
+npm install
+npm run build:win     # dist/linkedin-jobs-mcp.exe and its SHA-256
+```
+
+The build bundles the code with esbuild and injects it into a copy of `node.exe` (a Node.js single executable
+application); npx fetches both tools at fixed versions. Pushing a tag such as `v1.1.0` builds the app on GitHub
+Actions and attaches it to the release.
+
+Without the app, from this folder: `npm run app -- connect` registers `node app.js mcp` with the apps found.
+
 ### Prerequisites
 - **Node.js** (v14 or higher)
 - **npm** or **yarn**
@@ -343,7 +463,8 @@ node server.js
 
 **2. Configure in Claude Desktop/MCP Client:**
 
-Add to your MCP configuration file (`claude_desktop_config.json`):
+`npm run app -- connect` does this for every supported app it finds (see [Windows App](#-windows-app-no-nodejs-needed)).
+By hand, add to your MCP configuration file (`claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {

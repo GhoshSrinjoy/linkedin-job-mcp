@@ -7,13 +7,14 @@ const {
   ListToolsRequestSchema,
 } = require("@modelcontextprotocol/sdk/types.js");
 const linkedIn = require("./index.js");
+const { version } = require("./package.json");
 
 class LinkedInJobsServer {
   constructor() {
     this.server = new Server(
       {
         name: "linkedin-jobs-mcp",
-        version: "1.0.0",
+        version,
       },
       {
         capabilities: {
@@ -233,5 +234,17 @@ class LinkedInJobsServer {
   }
 }
 
-const server = new LinkedInJobsServer();
-server.run().catch(console.error);
+// One configured MCP server per connection (stdio, or one per HTTP request in stateless mode)
+function createServer() {
+  return new LinkedInJobsServer().server;
+}
+
+async function runStdio() {
+  await new LinkedInJobsServer().run();
+}
+
+module.exports = { LinkedInJobsServer, createServer, runStdio };
+
+if (require.main === module) {
+  runStdio().catch(console.error);
+}

@@ -3,9 +3,9 @@ const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 const { query } = require("../index");
 
-async function main() {
-  const argv = yargs(hideBin(process.argv))
-    .scriptName("linkedin-jobs")
+async function main(args = hideBin(process.argv), name = "linkedin-jobs") {
+  const argv = yargs(args)
+    .scriptName(name)
     .usage("$0 [options]")
     .option("keyword", {
       alias: "k",
@@ -57,4 +57,8 @@ async function main() {
   }
 }
 
-main();
+module.exports = { main };
+
+if (require.main === module) {
+  main();
+}

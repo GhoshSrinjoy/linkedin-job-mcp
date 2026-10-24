@@ -12,6 +12,8 @@ module.exports = {
   REQUEST_TIMEOUT_MS: intFromEnv("LINKEDIN_REQUEST_TIMEOUT_MS", 15000),
   CACHE_TTL_MS: intFromEnv("LINKEDIN_CACHE_TTL_MS", 60 * 60 * 1000),
   API_PORT: intFromEnv("PORT", 3000),
+  // only this computer can reach the API unless HOST is set (for example HOST=0.0.0.0 in a container)
+  API_HOST: process.env.HOST || "127.0.0.1",
   RATE_LIMIT_WINDOW_MS: intFromEnv("API_RATE_LIMIT_WINDOW_MS", 60_000),
   RATE_LIMIT_MAX: intFromEnv("API_RATE_LIMIT_MAX", 60),
   // job details: one page at a time, at least this far apart, cached for this long

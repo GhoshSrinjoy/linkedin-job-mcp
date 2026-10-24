@@ -1,7 +1,11 @@
 const express = require("express");
+const { StreamableHTTPServerTransport } = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
+const { localhostHostValidation } = require("@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js");
 const { query, getJobDetails } = require("./index");
+const { createServer } = require("./server");
 const {
   API_PORT,
+  API_HOST,
   RATE_LIMIT_WINDOW_MS,
   RATE_LIMIT_MAX,
   CACHE_TTL_MS,
@@ -9,6 +13,13 @@ const {
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+
+// Bound to this computer (the default), requests must also name it in the Host header,
+// so web pages cannot reach the server through DNS rebinding
+const LOOPBACK = ["127.0.0.1", "localhost", "::1"];
+const localHosts = localhostHostValidation();
+let localOnly = false;
+app.use((req, res, next) => (localOnly ? localHosts(req, res, next) : next()));
 
 // Simple per-IP rate limiter
 const rateHits = new Map();
@@ -118,6 +129,42 @@ async function sendJob(ref, res) {
 app.get("/job/:id", rateLimit, (req, res) => sendJob(req.params.id, res));
 app.get("/job", rateLimit, (req, res) => sendJob(req.query.url || req.query.id, res));
 
-app.listen(API_PORT, () => {
-  console.log(`LinkedIn Jobs API listening on http://localhost:${API_PORT}`);
-});
+// MCP over Streamable HTTP, stateless: a fresh server for every request
+async function handleMcp(req, res) {
+  const server = createServer();
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  res.on("close", () => {
+    transport.close();
+    server.close();
+  });
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    console.error("MCP error:", err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: "Internal server error" }, id: null });
+    }
+  }
+}
+
+function methodNotAllowed(req, res) {
+  res.status(405).json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed." }, id: null });
+}
+
+function startApi(port = API_PORT, host = API_HOST) {
+  localOnly = LOOPBACK.includes(host);
+  app.post("/mcp", handleMcp);
+  app.get("/mcp", methodNotAllowed);
+  app.delete("/mcp", methodNotAllowed);
+  const shown = host.includes(":") ? `[${host}]` : host;
+  return app.listen(port, host, () => {
+    console.error(`LinkedIn Jobs API listening on http://${shown}:${port} (MCP over HTTP at /mcp)`);
+  });
+}
+
+module.exports = { app, startApi };
+
+if (require.main === module) {
+  startApi();
+}

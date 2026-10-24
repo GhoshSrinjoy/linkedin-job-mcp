@@ -1,6 +1,6 @@
 {
   "name": "linkedin-jobs-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for LinkedIn job scraping",
   "main": "server.js",
   "bin": {
@@ -10,7 +10,9 @@
   "scripts": {
     "test": "node test.js",
     "start": "node server.js",
-    "api": "node api.js"
+    "api": "node api.js",
+    "app": "node app.js",
+    "build:win": "node scripts/build-win.js"
   },
   "keywords": [
     "mcp",
