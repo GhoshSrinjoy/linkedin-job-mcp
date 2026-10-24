@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ghost Job Radar</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230c1a2b'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%238fa5bf' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='5.5' fill='none' stroke='%238fa5bf' stroke-width='1.5'/%3E%3Cpath d='M16 16 L16 5 A11 11 0 0 1 25.5 10.5 Z' fill='%233987e5'/%3E%3Ccircle cx='21.5' cy='11' r='2.2' fill='%23fab219'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="shell">
+  <!-- ================================================================ station rail -->
+  <aside class="rail">
+    <a class="brand" href="#overview" data-goto="overview" aria-label="Ghost Job Radar, overview">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <rect width="40" height="40" rx="11" class="bm-bg"/>
+        <circle cx="20" cy="20" r="14" class="bm-ring"/>
+        <circle cx="20" cy="20" r="7" class="bm-ring"/>
+        <path d="M20 20 L20 6 A14 14 0 0 1 32.1 13 Z" class="bm-sweep"/>
+        <circle cx="27" cy="13.5" r="2.4" class="bm-blip"/>
+      </svg>
+      <span class="brand-text">
+        <span class="brand-name">Ghost Job Radar</span>
+        <span class="brand-sub">German job-market monitor</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Views">
+      <button class="nav-item" type="button" data-tab="overview">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 18.4 5.6"/></svg>
+        <span>Overview</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="check">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21H11"/><path d="M13 3l5 5v2.5"/><path d="M8.5 9h4M8.5 13h2.5"/><circle cx="16.5" cy="16.5" r="3.2"/><path d="m18.9 18.9 2.3 2.3"/></svg>
+        <span>Check a posting</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="company">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 21V4.5A1.5 1.5 0 0 1 6 3h7.5A1.5 1.5 0 0 1 15 4.5V21"/><path d="M15 9h3a1.5 1.5 0 0 1 1.5 1.5V21"/><path d="M3 21h18"/><path d="M8 7.5h3.5M8 11.5h3.5M8 15.5h3.5"/></svg>
+        <span>Company</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="city">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+        <span>City map</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="watch">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
+        <span>Watchlist</span>
+        <span class="nav-count" id="watch-count" hidden></span>
+      </button>
+      <button class="nav-item" type="button" data-tab="model">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M4 17c3.2 0 4.2-11 8-11s4.8 11 8 11"/><circle cx="12" cy="6" r="1.2"/></svg>
+        <span>Model</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="about">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6M9 11h4"/></svg>
+        <span>How it works</span>
+      </button>
+    </nav>
+
+    <section class="station" aria-labelledby="station-title">
+      <h2 class="eyebrow" id="station-title">Sources</h2>
+      <ul class="station-list" id="station-sources"></ul>
+      <dl class="station-facts" id="station-facts"></dl>
+    </section>
+
+    <div class="theme-switch" role="group" aria-label="Colour theme">
+      <button type="button" data-theme-choice="auto">Auto</button>
+      <button type="button" data-theme-choice="light">Light</button>
+      <button type="button" data-theme-choice="dark">Dark</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <!-- ============================================================== overview -->
+    <section id="tab-overview" class="view" aria-labelledby="h-overview">
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-overview">Overview</h1>
+          <p class="lead" id="overview-lead">Every stored job, graded by ghost-risk.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn btn-quiet" type="button" data-goto="city">Map a city</button>
+          <button class="btn btn-primary" type="button" data-goto="check">Check a posting</button>
+        </div>
+      </header>
+      <div id="overview-result" class="view-body"></div>
+    </section>
+
+    <!-- ============================================================== check -->
+    <section id="tab-check" class="view" aria-labelledby="h-check" hidden>
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-check">Check a posting</h1>
+          <p class="lead">Paste a job link or the ad text to see whether the job is really open.</p>
+        </div>
+      </header>
+      <form id="check-form" class="panel form-panel" autocomplete="off">
+        <div class="seg" role="group" aria-label="What to check">
+          <button type="button" class="seg-btn" data-mode="url" aria-pressed="true">Job link</button>
+          <button type="button" class="seg-btn" data-mode="text" aria-pressed="false">Ad text</button>
+        </div>
+        <div class="check-input" data-pane="url">
+          <label class="field field-hero" for="check-url">
+            <span class="field-label">Job link</span>
+            <input id="check-url" type="url" name="url" placeholder="https://… careers page, Personio, Greenhouse, Workday, Bundesagentur …">
+          </label>
+        </div>
+        <div class="check-input" data-pane="text" hidden>
+          <label class="field" for="check-text">
+            <span class="field-label">Ad text</span>
+            <textarea id="check-text" name="text" placeholder="Paste the ad text, or capture a job in one click with the browser extension."></textarea>
+          </label>
+        </div>
+        <div class="form-grid">
+          <label class="field" for="check-title"><span class="field-label">Job title</span><input id="check-title" name="title" placeholder="optional"></label>
+          <label class="field" for="check-company"><span class="field-label">Company</span><input id="check-company" name="company" placeholder="optional, improves the check"></label>
+          <label class="field" for="check-location"><span class="field-label">City</span><input id="check-location" name="location" placeholder="optional"></label>
+        </div>
+        <details class="more">
+          <summary>What you can see on the job site <span class="muted">optional</span></summary>
+          <div class="form-grid">
+            <label class="field" for="check-applicants"><span class="field-label">Applicants shown</span><input id="check-applicants" type="number" name="applicant_count" min="0" placeholder="e.g. 120"></label>
+            <label class="field" for="check-posted"><span class="field-label">Date shown as posted</span><input id="check-posted" type="date" name="posted_date_shown"></label>
+            <label class="field" for="check-resp"><span class="field-label">Recruiter-activity indicator</span>
+              <select id="check-resp" name="responsiveness">
+                <option value="">Don't know</option>
+                <option value="active">Shown (e.g. "actively reviewing")</option>
+                <option value="none">Not shown</option>
+              </select>
+            </label>
+            <label class="field" for="check-applied"><span class="field-label">I applied on</span><input id="check-applied" type="date" name="applied_on"></label>
+            <label class="field" for="check-response"><span class="field-label">Response so far</span>
+              <select id="check-response" name="response">
+                <option value="">—</option>
+                <option value="none">No reply</option>
+                <option value="auto_reject">Automatic rejection</option>
+                <option value="reject">Rejection</option>
+                <option value="internal">Internal candidate chosen</option>
+                <option value="interview">Interview invitation</option>
+                <option value="offer">Offer</option>
+              </select>
+            </label>
+            <label class="check" for="check-reposted"><input id="check-reposted" type="checkbox" name="reposted_label"> The site shows a "Reposted" label</label>
+          </div>
+        </details>
+        <div class="form-actions">
+          <label class="check" for="check-news"><input id="check-news" type="checkbox" name="with_news" checked> Include company news</label>
+          <button class="btn btn-primary btn-large" type="submit">Check posting</button>
+        </div>
+      </form>
+      <p id="check-status" class="status-line" role="status" aria-live="polite"></p>
+      <div id="check-result" class="view-body"></div>
+    </section>
+
+    <!-- ============================================================== company -->
+    <section id="tab-company" class="view" aria-labelledby="h-company" hidden>
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-company">Company</h1>
+          <p class="lead">All open jobs of one employer, with its grade and hiring record.</p>
+        </div>
+      </header>
+      <form id="company-form" class="panel form-panel form-inline" autocomplete="off">
+        <label class="field grow" for="company-name"><span class="field-label">Company</span><input id="company-name" name="name" required minlength="2" placeholder="e.g. N26"></label>
+        <label class="field grow" for="company-url"><span class="field-label">Careers page URL</span><input id="company-url" type="url" name="careers_url" placeholder="optional, if the name is not found"></label>
+        <label class="check" for="company-news"><input id="company-news" type="checkbox" name="news" checked> Company news</label>
+        <button class="btn btn-primary" type="submit">Analyse company</button>
+      </form>
+      <p id="company-status" class="status-line" role="status" aria-live="polite"></p>
+      <div id="company-result" class="view-body"></div>
+    </section>
+
+    <!-- ============================================================== city -->
+    <section id="tab-city" class="view" aria-labelledby="h-city" hidden>
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-city">City map</h1>
+          <p class="lead">Jobs around a city, marked by ghost-risk.</p>
+        </div>
+      </header>
+      <form id="city-form" class="panel form-panel" autocomplete="off">
+        <div class="form-inline">
+          <label class="field grow" for="city-city"><span class="field-label">City</span><input id="city-city" name="city" required minlength="2" placeholder="e.g. Berlin"></label>
+          <label class="field grow" for="city-q"><span class="field-label">Keyword</span><input id="city-q" name="q" placeholder="optional, e.g. Python"></label>
+          <label class="field narrow" for="city-radius"><span class="field-label">Radius</span>
+            <select id="city-radius" name="radius">
+              <option value="5">5 km</option>
+              <option value="10">10 km</option>
+              <option value="20" selected>20 km</option>
+              <option value="50">50 km</option>
+            </select>
+          </label>
+          <label class="field narrow" for="city-posted"><span class="field-label">Posted within</span>
+            <select id="city-posted" name="posted_within">
+              <option value="">Any time</option>
+              <option value="1">24 hours</option>
+              <option value="7">7 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </label>
+          <label class="field narrow" for="city-type"><span class="field-label">Job type</span>
+            <select id="city-type" name="job_type">
+              <option value="">Any</option>
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+              <option value="contract">Fixed-term / contract</option>
+              <option value="internship">Internship</option>
+            </select>
+          </label>
+          <button class="btn btn-primary" type="submit">Show postings</button>
+        </div>
+        <div class="filter-chips">
+          <label class="toggle-chip" for="city-remote"><input id="city-remote" type="checkbox" name="remote"> Remote / home office only</label>
+          <label class="toggle-chip" for="city-agencies"><input id="city-agencies" type="checkbox" name="exclude_agencies"> Hide staffing agencies</label>
+          <span class="chip-sep" aria-hidden="true"></span>
+          <span class="filter-label">Sources</span>
+          <span id="city-sources" class="filter-chips-inner"></span>
+        </div>
+      </form>
+      <p id="city-status" class="status-line" role="status" aria-live="polite"></p>
+      <div id="city-summary" class="view-body"></div>
+      <div class="grid city-stage">
+        <div class="panel panel-flush span-8 map-panel">
+          <div id="map" role="region" aria-label="Map of postings"></div>
+        </div>
+        <div id="city-side" class="span-4 stack"></div>
+      </div>
+      <div id="city-result" class="view-body"></div>
+    </section>
+
+    <!-- ============================================================== watchlist -->
+    <section id="tab-watch" class="view" aria-labelledby="h-watch" hidden>
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-watch">Watchlist</h1>
+          <p class="lead">Companies and cities re-checked every 12 hours, to catch reposts and removals.</p>
+        </div>
+      </header>
+      <form id="watch-form" class="panel form-panel form-inline" autocomplete="off">
+        <label class="field narrow" for="watch-kind"><span class="field-label">Type</span>
+          <select id="watch-kind" name="kind">
+            <option value="company">Company</option>
+            <option value="city">City</option>
+          </select>
+        </label>
+        <label class="field grow" for="watch-query"><span class="field-label">Company or city</span><input id="watch-query" name="query" required minlength="2"></label>
+        <label class="field grow" for="watch-extra"><span class="field-label">Careers URL or keyword</span><input id="watch-extra" name="extra" placeholder="optional"></label>
+        <button class="btn btn-primary" type="submit">Add to watchlist</button>
+      </form>
+      <p id="watch-status" class="status-line" role="status" aria-live="polite"></p>
+      <div id="watch-result" class="view-body"></div>
+    </section>
+
+    <!-- ============================================================== model -->
+    <section id="tab-model" class="view" aria-labelledby="h-model" hidden>
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-model">Model</h1>
+          <p class="lead">How well the grades match real outcomes, and what they learn from them.</p>
+        </div>
+      </header>
+      <p id="model-status" class="status-line" role="status" aria-live="polite"></p>
+      <div id="model-result" class="view-body"></div>
+    </section>
+
+    <!-- ============================================================== method -->
+    <section id="tab-about" class="view" aria-labelledby="h-about" hidden>
+      <header class="view-head">
+        <div class="view-title">
+          <h1 id="h-about">How it works</h1>
+          <p class="lead">How each job is graded, and what the grades mean.</p>
+        </div>
+      </header>
+      <div class="method">
+        <nav class="toc" aria-label="On this page">
+          <p class="eyebrow">On this page</p>
+          <a href="#m-grades">Grades</a>
+          <a href="#m-thresholds">Your settings</a>
+          <a href="#m-verdicts">Three verdicts</a>
+          <a href="#m-types">Five patterns</a>
+          <a href="#m-signals">Signals</a>
+          <a href="#m-sources">Data sources</a>
+        </nav>
+        <div class="method-body">
+          <section class="sec" id="m-grades" aria-labelledby="mh-grades">
+            <div class="sec-head"><h2 class="sec-title" id="mh-grades">Grades</h2>
+              <p class="sec-sub">Signals add up to a score from 0 to 100. The highest grade needs two strong signals.</p></div>
+            <div class="panel" id="method-scale"></div>
+          </section>
+
+          <section class="sec" id="m-thresholds" aria-labelledby="mh-thresholds">
+            <div class="sec-head"><h2 class="sec-title" id="mh-thresholds">Your settings</h2>
+              <p class="sec-sub">When age starts to count, which applicant counts mean a low chance, and how much history to use.</p></div>
+            <div class="panel" id="method-thresholds"><p class="secondary small">Loading…</p></div>
+          </section>
+
+          <section class="sec" id="m-verdicts" aria-labelledby="mh-verdicts">
+            <div class="sec-head"><h2 class="sec-title" id="mh-verdicts">Three verdicts</h2>
+              <p class="sec-sub">Every job gets three separate answers.</p></div>
+            <div class="panel prose">
+              <ul>
+                <li><strong>Ghost-risk.</strong> Is the position really open and filled from outside?</li>
+                <li><strong>Your chance.</strong> If it is, how crowded is it?</li>
+                <li><strong>Communication.</strong> Does the employer answer? A rejection counts as an answer; 30 days of silence does not.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="sec" id="m-types" aria-labelledby="mh-types">
+            <div class="sec-head"><h2 class="sec-title" id="mh-types">Five patterns</h2>
+              <p class="sec-sub">Why a job may not be really open.</p></div>
+            <div class="type-grid">
+              <article class="panel type-card"><h3>Possibly filled or abandoned</h3><p>The role is filled or dropped, but the ad stays up.</p><p class="traces"><span class="eyebrow">Signs</span>Gone from the employer's own site, far older than usual, start date or deadline long past.</p></article>
+              <article class="panel type-card"><h3>Candidate pool</h3><p>No specific vacancy; candidates are collected for later.</p><p class="traces"><span class="eyebrow">Signs</span>Staffing agencies, "Talentpool", "Initiativbewerbung", unchanged reposts.</p></article>
+              <article class="panel type-card"><h3>Internal favourite</h3><p>A real vacancy, advertised only because a rule requires it.</p><p class="traces"><span class="eyebrow">Signs</span>Internal-posting wording, public employer, unusually narrow profile.</p></article>
+              <article class="panel type-card"><h3>Hiring frozen</h3><p>A freeze or restructuring stopped hiring after the ad went up.</p><p class="traces"><span class="eyebrow">Signs</span>Layoff, insolvency or freeze news while the ad stays online.</p></article>
+              <article class="panel type-card"><h3>CV collection</h3><p>The ad signals growth or collects CVs with no role behind it.</p><p class="traces"><span class="eyebrow">Signs</span>Far more openings than the company could fill, generic text.</p></article>
+            </div>
+          </section>
+
+          <section class="sec" id="m-signals" aria-labelledby="mh-signals">
+            <div class="sec-head"><h2 class="sec-title" id="mh-signals">Signals</h2>
+              <p class="sec-sub">Points each signal adds or removes. Anything unknown counts as neutral.</p></div>
+            <div class="panel panel-flush table-wrap">
+              <table>
+                <thead><tr><th>Signal</th><th class="num">Points</th></tr></thead>
+                <tbody>
+                  <tr><td>Online longer than usual for the occupation</td><td class="num">+6 to +26</td></tr>
+                  <tr><td>Reposted with unchanged text</td><td class="num">+10 to +27</td></tr>
+                  <tr><td>Gone from the employer's own site</td><td class="num">+8 to +26</td></tr>
+                  <tr><td>Start date, deadline or expiry long past</td><td class="num">+8 to +16</td></tr>
+                  <tr><td>Talent-pool wording</td><td class="num">+20</td></tr>
+                  <tr><td>Your note: internal candidates usually get the jobs</td><td class="num">+16</td></tr>
+                  <tr><td>Your outcomes: internal candidate chosen</td><td class="num">+10 to +20</td></tr>
+                  <tr><td>More openings than the company can fill</td><td class="num">+8 to +14</td></tr>
+                  <tr><td>Layoffs, insolvency or a freeze while still hiring</td><td class="num">+12</td></tr>
+                  <tr><td>Your events: freeze, restructuring, hiring manager left</td><td class="num">+12</td></tr>
+                  <tr><td>Position not approved yet</td><td class="num">+12</td></tr>
+                  <tr><td>Depends on a project, contract or funding</td><td class="num">+5 to +12</td></tr>
+                  <tr><td>Shrinking while hiring, with distress news</td><td class="num">+10</td></tr>
+                  <tr><td>No interviews from 4 or more answered applications</td><td class="num">+5 to +10</td></tr>
+                  <tr><td>Staffing agency</td><td class="num">+8</td></tr>
+                  <tr><td>Hiring long after the last funding round</td><td class="num">+6</td></tr>
+                  <tr><td>Old posting with almost no applicants</td><td class="num">−3 to +6</td></tr>
+                  <tr><td>No pay stated where pay is usually shown</td><td class="num">0 to +4</td></tr>
+                  <tr><td>Contracts won, new starters, expansion, growth or recent funding</td><td class="num">−3 to −6</td></tr>
+                  <tr><td>Listed on the employer's own site, concrete details, interview invitation</td><td class="num">−3 to −15</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="sec" id="m-sources" aria-labelledby="mh-sources">
+            <div class="sec-head"><h2 class="sec-title" id="mh-sources">Data sources</h2></div>
+            <div class="panel prose">
+              <ul>
+                <li>Employers' own job feeds: Personio, Greenhouse, Lever, SmartRecruiters, Ashby, Recruitee, Workday</li>
+                <li>LinkedIn, through your linkedin-jobs-mcp</li>
+                <li>Bundesagentur für Arbeit: job board and vacancy statistics</li>
+                <li>Google for Jobs, Adzuna and Arbeitnow</li>
+                <li>GDELT for company news, TED for public contracts, OpenStreetMap for the map</li>
+              </ul>
+              <p>The radar never logs in to job sites and never stores recruiters' contact details.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

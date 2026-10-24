@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Ghost Job Radar</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <strong>Ghost Job Radar</strong>
+    <button id="settings-toggle" class="link" type="button" aria-expanded="false">Settings</button>
+  </header>
+  <section id="settings" hidden>
+    <label>Radar address <input id="api" type="url" placeholder="http://127.0.0.1:8000"></label>
+    <label class="check"><input id="news" type="checkbox" checked> Include company news</label>
+    <button id="save" type="button">Save</button>
+  </section>
+  <p class="intro">Reads only this page, only when you click. Nothing is collected in the background.</p>
+  <button id="check" class="primary" type="button">Check this job</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div id="result"></div>
+  <script src="extract.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
