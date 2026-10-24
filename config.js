@@ -14,4 +14,7 @@ module.exports = {
   API_PORT: intFromEnv("PORT", 3000),
   RATE_LIMIT_WINDOW_MS: intFromEnv("API_RATE_LIMIT_WINDOW_MS", 60_000),
   RATE_LIMIT_MAX: intFromEnv("API_RATE_LIMIT_MAX", 60),
+  // job details: one page at a time, at least this far apart, cached for this long
+  DETAIL_MIN_INTERVAL_MS: intFromEnv("LINKEDIN_DETAIL_MIN_INTERVAL_MS", 1500),
+  DETAIL_CACHE_TTL_MS: intFromEnv("LINKEDIN_DETAIL_CACHE_TTL_MS", 6 * 60 * 60 * 1000),
 };

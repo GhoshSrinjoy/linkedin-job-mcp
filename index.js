@@ -5,6 +5,8 @@ const {
   USER_AGENT,
   REQUEST_TIMEOUT_MS,
   CACHE_TTL_MS,
+  DETAIL_MIN_INTERVAL_MS,
+  DETAIL_CACHE_TTL_MS,
 } = require("./config");
 
 // Simple delay helper for retries/backoff
@@ -305,6 +307,133 @@ async function query(queryObject = {}) {
   return trimmed;
 }
 
+// ---------------------------------------------------------------------------
+// Job details: the public (guest) job page with the full description
+// ---------------------------------------------------------------------------
+const JOB_URL = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting";
+const detailCache = new JobCache();
+detailCache.TTL = DETAIL_CACHE_TTL_MS;
+let detailQueue = Promise.resolve();
+let lastDetailAt = 0;
+
+// Accepts a job id or any LinkedIn job URL (jobs/view/<slug>-<id>, ?currentJobId=<id>)
+function jobIdFrom(input) {
+  const text = normalizeStr(String(input || ""));
+  const match =
+    text.match(/^(\d{6,})$/) ||
+    text.match(/currentJobId=(\d{6,})/) ||
+    text.match(/jobs\/view\/(?:[^/?#]*-)?(\d{6,})/) ||
+    text.match(/jobPosting\/(\d{6,})/);
+  return match ? match[1] : null;
+}
+
+function cleanText($, el) {
+  const node = $(el).clone();
+  node.find("br").replaceWith("\n");
+  node.find("li").each((_, li) => {
+    $(li).prepend("• ");
+    $(li).append("\n");
+  });
+  node.find("p, ul, ol, h1, h2, h3, h4").each((_, block) => $(block).append("\n"));
+  return node
+    .text()
+    .replace(/[ \t ]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function parseJobPage(html, id) {
+  const $ = cheerio.load(html);
+  const text = (selector) => $(selector).first().text().replace(/\s+/g, " ").trim();
+  const criteria = {};
+  $(".description__job-criteria-item").each((_, el) => {
+    const key = $(el).find(".description__job-criteria-subheader").text().replace(/\s+/g, " ").trim();
+    const value = $(el).find(".description__job-criteria-text").text().replace(/\s+/g, " ").trim();
+    if (key && value) criteria[key] = value;
+  });
+  const markup = $(".show-more-less-html__markup").first();
+  return {
+    id,
+    position: text(".top-card-layout__title, .topcard__title"),
+    company: text(".topcard__org-name-link, .topcard__flavor a"),
+    location: text(".topcard__flavor--bullet"),
+    postedAgo: text(".posted-time-ago__text") || null,
+    applicants: text(".num-applicants__caption, .num-applicants__figure") || null,
+    salary: text(".salary, .compensation__salary") || null,
+    seniority: criteria["Seniority level"] || null,
+    employmentType: criteria["Employment type"] || null,
+    jobFunction: criteria["Job function"] || null,
+    industries: criteria["Industries"] || null,
+    criteria,
+    acceptingApplications: !/no longer accepting applications/i.test($("body").text()),
+    description: markup.length ? cleanText($, markup) : "",
+    jobUrl: `https://www.linkedin.com/jobs/view/${id}/`,
+  };
+}
+
+async function fetchJobPage(id, attempt = 1) {
+  const resp = await axios.get(`${JOB_URL}/${id}`, {
+    headers: {
+      "User-Agent": DEFAULT_USER_AGENT,
+      "Accept-Language": "en-US,en;q=0.9",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    },
+    timeout: REQUEST_TIMEOUT_MS,
+    validateStatus: (s) => s >= 200 && s < 500,
+  });
+  if ((resp.status === 429 || resp.status === 999) && attempt < 2) {
+    await delay(3000);
+    return fetchJobPage(id, attempt + 1);
+  }
+  return resp;
+}
+
+/**
+ * Full details of one job: description, criteria, posted time and the applicant count shown on the page.
+ * Requests run one at a time, at least DETAIL_MIN_INTERVAL_MS apart, and are cached for DETAIL_CACHE_TTL_MS.
+ * Returns { id, removed: true } when LinkedIn no longer has the job.
+ */
+async function getJobDetails(input) {
+  const id = jobIdFrom(input);
+  if (!id) {
+    const err = new Error("Give a LinkedIn job id or a LinkedIn job URL");
+    err.status = 400;
+    throw err;
+  }
+  const cached = detailCache.get(id);
+  if (cached) return { ...cached, cached: true };
+  const run = async () => {
+    const again = detailCache.get(id);
+    if (again) return { ...again, cached: true };
+    const wait = lastDetailAt + DETAIL_MIN_INTERVAL_MS - Date.now();
+    if (wait > 0) await delay(wait);
+    lastDetailAt = Date.now();
+    const resp = await fetchJobPage(id);
+    if (resp.status === 404 || resp.status === 410) {
+      const gone = { id, removed: true, jobUrl: `https://www.linkedin.com/jobs/view/${id}/` };
+      detailCache.set(id, gone);
+      return gone;
+    }
+    if (resp.status >= 400) {
+      const err = new Error(`LinkedIn returned HTTP ${resp.status}`);
+      err.status = resp.status === 429 || resp.status === 999 ? 429 : 502;
+      throw err;
+    }
+    const job = parseJobPage(resp.data, id);
+    if (!job.position) {
+      const err = new Error("The job page had no job data (layout change or a block page)");
+      err.status = 502;
+      throw err;
+    }
+    detailCache.set(id, job);
+    return job;
+  };
+  const result = detailQueue.then(run, run);
+  detailQueue = result.catch(() => {});
+  return result;
+}
+
 // Stub kept for compatibility; guest endpoint does not need auth
 function setAuth(jsessionid, li_at) {
   console.log(
@@ -315,8 +444,14 @@ function setAuth(jsessionid, li_at) {
 
 module.exports = {
   query,
+  getJobDetails,
+  jobIdFrom,
+  parseJobPage,
   JobCache,
-  clearCache: () => cache.clear(),
+  clearCache: () => {
+    cache.clear();
+    detailCache.clear();
+  },
   getCacheSize: () => cache.cache.size,
   setAuth,
 };

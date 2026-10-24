@@ -120,6 +120,22 @@ class LinkedInJobsServer {
               },
             },
           },
+          {
+            name: "get_linkedin_job_details",
+            description:
+              "Get one LinkedIn job's full description, criteria (seniority, employment type, industries), " +
+              "posted time and the applicant count shown on the public job page",
+            inputSchema: {
+              type: "object",
+              properties: {
+                job: {
+                  type: "string",
+                  description: "LinkedIn job id (e.g. '1234567890') or job URL",
+                },
+              },
+              required: ["job"],
+            },
+          },
         ],
       };
     });
@@ -186,6 +202,21 @@ class LinkedInJobsServer {
                 }, null, 2),
               },
             ],
+            isError: true,
+          };
+        }
+      }
+
+      if (name === "get_linkedin_job_details") {
+        try {
+          const job = await linkedIn.getJobDetails(args.job);
+          return {
+            content: [{ type: "text", text: JSON.stringify({ success: !job.removed, ...job }, null, 2) }],
+          };
+        } catch (error) {
+          console.error("Error in job details:", error);
+          return {
+            content: [{ type: "text", text: JSON.stringify({ success: false, error: error.message, job: args.job }, null, 2) }],
             isError: true,
           };
         }

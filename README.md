@@ -47,6 +47,7 @@ This project provides a transparent, research-oriented framework for safe and co
 #### 1. **MCP Server for Claude Desktop** (`server.js`)
 - ✅ Full Model Context Protocol implementation
 - ✅ Exposes `search_linkedin_jobs` tool to Claude and other MCP clients
+- ✅ `get_linkedin_job_details` tool: one job's full description, criteria and applicant count
 - ✅ Stdio transport for seamless integration
 - ✅ Auto-discovery by MCP-compatible clients
 - **Usage**: `npm start` → Configure in `claude_desktop_config.json`
@@ -62,6 +63,7 @@ This project provides a transparent, research-oriented framework for safe and co
 #### 3. **REST API Server** (`api.js`)
 - ✅ Express.js REST API with rate limiting
 - ✅ `POST /search` - Job search with JSON body
+- ✅ `GET /job/:id` or `GET /job?url=<job link>` - One job's full description, criteria and applicant count
 - ✅ `GET /health` - Health check endpoint
 - ✅ Configurable rate limits and timeouts
 - ✅ CORS enabled for web applications
@@ -121,6 +123,8 @@ This project provides a transparent, research-oriented framework for safe and co
   - `PORT` - API server port
   - `API_RATE_LIMIT_WINDOW_MS` - Rate limit window
   - `API_RATE_LIMIT_MAX` - Max requests per window
+  - `LINKEDIN_DETAIL_MIN_INTERVAL_MS` - Minimum gap between job-detail page requests (default 1500)
+  - `LINKEDIN_DETAIL_CACHE_TTL_MS` - How long job details stay cached (default 6 hours)
 - **Stealth Measures**: Random user agents, realistic headers
 - **Session Management**: Cookie-based authentication support
 
@@ -443,6 +447,35 @@ searchJobs();
   }
 }
 ```
+
+### Job Details Response
+
+`GET /job/1234567890` (REST), the `get_linkedin_job_details` tool (MCP) or `linkedIn.getJobDetails(idOrUrl)`
+(library) read the public job page. Requests run one at a time, at least `LINKEDIN_DETAIL_MIN_INTERVAL_MS` apart,
+and each job is cached for `LINKEDIN_DETAIL_CACHE_TTL_MS`.
+
+```json
+{
+  "id": "1234567890",
+  "position": "Data Engineer (m/w/d)",
+  "company": "Example GmbH",
+  "location": "Berlin, Berlin, Germany",
+  "postedAgo": "3 weeks ago",
+  "applicants": "Over 200 applicants",
+  "salary": null,
+  "seniority": "Mid-Senior level",
+  "employmentType": "Full-time",
+  "jobFunction": null,
+  "industries": "Software Development",
+  "criteria": { "Seniority level": "Mid-Senior level", "Employment type": "Full-time", "Industries": "Software Development" },
+  "acceptingApplications": true,
+  "description": "We are looking for a data engineer to join our platform team. …",
+  "jobUrl": "https://www.linkedin.com/jobs/view/1234567890/"
+}
+```
+
+A job LinkedIn no longer has returns HTTP 404 with `{ "id": "…", "removed": true }`; an invalid id or URL returns
+HTTP 400.
 
 ### Direct Usage Response
 ```javascript

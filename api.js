@@ -1,5 +1,5 @@
 const express = require("express");
-const { query } = require("./index");
+const { query, getJobDetails } = require("./index");
 const {
   API_PORT,
   RATE_LIMIT_WINDOW_MS,
@@ -103,6 +103,20 @@ app.post("/search", rateLimit, async (req, res) => {
     res.status(500).json({ error: err.message || "Unknown error" });
   }
 });
+
+// Job details by id (GET /job/1234567890) or by URL (GET /job?url=https://www.linkedin.com/jobs/view/...)
+async function sendJob(ref, res) {
+  try {
+    const job = await getJobDetails(ref);
+    res.status(job.removed ? 404 : 200).json(job);
+  } catch (err) {
+    console.error("API error:", err.message);
+    res.status(err.status || 500).json({ error: err.message || "Unknown error" });
+  }
+}
+
+app.get("/job/:id", rateLimit, (req, res) => sendJob(req.params.id, res));
+app.get("/job", rateLimit, (req, res) => sendJob(req.query.url || req.query.id, res));
 
 app.listen(API_PORT, () => {
   console.log(`LinkedIn Jobs API listening on http://localhost:${API_PORT}`);
