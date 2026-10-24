@@ -531,12 +531,6 @@ export function radarScope(jobs, { onSelect, onHover } = {}) {
   }, 300);
 
   const legend = el("div", { class: "scope-legend" }, GRADE_ORDER.map((g) => el("span", {}, gradeIcon(g, 15), GRADES[g].label)));
-  const skipped = jobs.length - usable.length;
-  const caption = el("p", { class: "scope-caption", text:
-    "Distance from the centre: time online ÷ the Bundesagentur's typical advertising time for the occupation "
-    + "(square-root scale; the dashed ring is 1×, as long as typical). The outer band holds jobs at 4× and more. "
-    + "Sectors: where the job was found."
-    + (skipped ? ` ${skipped} job${skipped === 1 ? "" : "s"} without an occupation baseline or grade are not plotted.` : "") });
   const top = [...usable].sort((a, b) => b.features.excess_ratio - a.features.excess_ratio).slice(0, 40);
   const twin = el("details", { class: "twin" }, el("summary", { text: "Show as table" }),
     el("div", { class: "table-wrap" }, el("table", {},
@@ -547,7 +541,7 @@ export function radarScope(jobs, { onSelect, onHover } = {}) {
         el("td", { text: sectorOf(sp.posting) }),
         el("td", { class: "num", text: sp.features.excess_ratio.toFixed(1) }),
         el("td", { class: "num", text: sp.features.live_days ?? "—" })))))));
-  wrap.append(chart, legend, caption, twin);
+  wrap.append(chart, legend, twin);
   return wrap;
 }
 

@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
+# your database and .env in a folder of their own, e.g. when `linkedin-jobs-mcp radar` starts the dashboard
+HOME = Path(os.environ["GHOSTRADAR_HOME"]) if os.environ.get("GHOSTRADAR_HOME") else None
 
 
 def _load_dotenv(path: Path) -> None:
@@ -20,7 +22,7 @@ def _load_dotenv(path: Path) -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-_load_dotenv(ROOT / ".env")
+_load_dotenv((HOME or ROOT) / ".env")
 
 
 def _flag(name: str, default: str) -> bool:
@@ -29,7 +31,7 @@ def _flag(name: str, default: str) -> bool:
 
 @dataclass
 class Settings:
-    db_path: Path = Path(os.environ.get("GHOSTRADAR_DB", str(DATA_DIR / "ghostradar.db")))
+    db_path: Path = Path(os.environ.get("GHOSTRADAR_DB", str((HOME or DATA_DIR) / "ghostradar.db")))
     baseline_csv: Path = DATA_DIR / "ba_engpass.csv"
     adzuna_app_id: str = os.environ.get("ADZUNA_APP_ID", "")
     adzuna_app_key: str = os.environ.get("ADZUNA_APP_KEY", "")

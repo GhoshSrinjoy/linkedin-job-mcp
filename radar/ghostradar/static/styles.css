@@ -782,7 +782,6 @@ details.twin[open] summary { margin-bottom: 8px; }
 @keyframes blip { 0% { transform: scale(1); } 35% { transform: scale(1.9); } 100% { transform: scale(1); } }
 .scope-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 13px; }
 .scope-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.scope-caption { font-size: 13px; color: var(--scope-muted); max-width: 70ch; }
 .scope-empty { color: var(--scope-muted); padding: 40px 0; text-align: center; }
 
 /* ------------------------------------------------------------------ empty states and intros */

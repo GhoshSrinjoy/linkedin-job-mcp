@@ -74,7 +74,7 @@ The company view has panels for knowledge the radar cannot see from outside:
 Employer-wide evidence is not capped for postings younger than 21 days, because it does not need time to show. The
 radar also flags ads that depend on a project, contract or grant award ("vorbehaltlich der Auftragsvergabe", "bei
 Zuschlag", "subject to funding"), and it fills in the ad texts of Bundesagentur copies that came from search results
-without text. LinkedIn copies stay without text: linkedin-jobs-mcp offers search only.
+without text. LinkedIn copies get their text from the public job page.
 
 Applicant counts give "your chances": 100+ applicants is high competition and 200+ very high in any field, and
 fields with few applications per hire (care, social work: about 8) reach high sooner. Very high competition lowers
@@ -123,6 +123,20 @@ with the Bundesagentur's median vacancy duration for that occupation and region 
 
 ## Run it
 
+From the repository root, one command sets everything up and opens the dashboard:
+
+```bash
+linkedin-jobs-mcp radar        # or: npm run radar (from source), .\linkedin-jobs-mcp.exe radar (Windows app)
+```
+
+It needs Python 3.11 or newer. The first start creates a Python environment and installs the radar's packages; every
+start also runs the LinkedIn data source, so LinkedIn search and job pages work without further setup. Your database
+and `.env` live in `%LOCALAPPDATA%\linkedin-jobs-mcp\radar` (macOS: `~/Library/Application Support/linkedin-jobs-mcp/radar`,
+Linux: `~/.local/share/linkedin-jobs-mcp/radar`); set `GHOSTRADAR_HOME` to use another folder. Options:
+`--port 8000`, `--no-browser`.
+
+To work on the radar itself, run it from this folder:
+
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt
@@ -142,15 +156,11 @@ shows which are connected.
 
 | Platform | How | Switch in `.env` |
 | --- | --- | --- |
-| **LinkedIn** | Your [linkedin-jobs-mcp](https://github.com/GhoshSrinjoy/linkedin-job-mcp) REST API: `npm ci && npm run api` in that repo. Search finds jobs; `GET /job/{id}` adds the full ad text, criteria and the applicant count from the public job page (one page at a time, 1.5 s apart, cached for 6 h) | `LINKEDIN_JOBS_API=http://localhost:3000` |
+| **LinkedIn** | The linkedin-jobs-mcp REST API from the repository root. `linkedin-jobs-mcp radar` starts it for you; when you run the radar yourself, start `npm run api` there. Search finds jobs; `GET /job/{id}` adds the full ad text, criteria and the applicant count from the public job page (one page at a time, 1.5 s apart, cached for 6 h) | `LINKEDIN_JOBS_API=http://localhost:3000` (set automatically by `linkedin-jobs-mcp radar`) |
 | **Bundesagentur Jobbörse** (about 1 million postings, with coordinates, first-publication dates and start dates) | Jobsuche API, built in | `BA_JOBSUCHE=1` (read the terms note below first) |
 | **Indeed, StepStone, Glassdoor, XING** and employer sites | Google for Jobs through the JSearch API; its apply options also show whether the employer's own site still carries the job | `JSEARCH_API_KEY=…` |
 | **Broad German aggregator** | Adzuna API | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` |
 | **Applicant counts, "Reposted" labels, recruiter-activity badges** | Browser extension in `extension/`: in Chrome or Edge open `chrome://extensions`, switch on developer mode, choose "Load unpacked", pick the `extension` folder. On a job page, click the icon and then "Check this job" | none |
-
-The LinkedIn job-details endpoint (`GET /job/{id}`) is new in linkedin-jobs-mcp. If your checkout does not have it
-yet, apply `integrations/linkedin-job-mcp/0001-job-details.patch` there with `git am`. Without it, LinkedIn copies
-stay without ad text and LinkedIn links fall back to pasting the text.
 
 With LinkedIn or Google for Jobs connected, the company view also collects the employer's postings on those
 platforms. It compares them with the employer's own job feed, so a platform copy that outlives the original is

@@ -82,6 +82,7 @@ SOURCE_LABELS = {
     "personio": "Personio", "greenhouse": "Greenhouse", "lever": "Lever", "smartrecruiters": "SmartRecruiters",
     "ashby": "Ashby", "recruitee": "Recruitee", "workday": "Workday", "jsonld": "careers-page",
     "page": "web-page", "arbeitnow": "Arbeitnow", "adzuna": "Adzuna", "manual": "pasted",
+    "ba": "the Bundesagentur board", "linkedin": "LinkedIn", "jsearch": "Google for Jobs",
 }
 
 
