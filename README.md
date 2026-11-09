@@ -15,7 +15,7 @@ clients; the same tools also come as an npm package, a REST API and a command li
 
 | Tool | What your AI app gets |
 |------|-----------------------|
-| `search_linkedin_jobs` | Jobs by keyword and location, filtered by date, job type, remote work, salary, experience level, verified postings or fewer than 10 applicants |
+| `search_linkedin_jobs` | Jobs by keyword and location, filtered by date, job type, remote work or fewer than 10 applicants |
 | `get_linkedin_job_details` | One job's full description, seniority, employment type, industries, posting age and applicant count |
 | `check_ghost_job` | Ghost Job Radar's grade for one posting: how likely it is a ghost job, your chance against the competition, and the facts behind it. Needs the radar running |
 
@@ -191,15 +191,13 @@ it yourself then.
 | `dateSincePosted` | `past 24 hours`, `past week`, `past month` |
 | `jobType` | `full time`, `part time`, `contract`, `temporary`, `volunteer`, `internship` |
 | `remoteFilter` | `on site`, `remote`, `hybrid` |
-| `salary` | Minimum: `40000`, `60000`, `80000`, `100000`, `120000` |
-| `experienceLevel` | `internship`, `entry level`, `associate`, `senior`, `director`, `executive` |
+| `under_10_applicants` | Jobs with fewer than 10 applicants |
 | `limit` | Number of jobs (default 10; 25 in the REST API) |
 | `sortBy` | `recent` or `relevant` |
-| `page` | Page number, from 0 |
-| `has_verification` | Verified jobs only |
-| `under_10_applicants` | Jobs with fewer than 10 applicants |
+| `page` | Page of results, from 0; a page is `limit` jobs long |
 
-The REST API accepts every option except `salary`, `experienceLevel`, `has_verification` and `under_10_applicants`.
+The REST API accepts the same options. LinkedIn's public search ignores salary, experience level and verified-job
+filters, so there are none.
 
 ## Responses
 

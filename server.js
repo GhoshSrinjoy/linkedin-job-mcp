@@ -71,90 +71,75 @@ class LinkedInJobsServer {
         tools: [
           {
             name: "search_linkedin_jobs",
-            description: "Search for LinkedIn jobs with various filters",
+            description:
+              "Find open jobs on LinkedIn by keyword and location, newest first. Read-only: it reads " +
+              "LinkedIn's public job search without signing in, spaces its requests out and keeps each " +
+              "search for an hour, so repeating a search answers at once. Returns JSON with total_jobs and " +
+              "jobs, each with position, company, location, date, agoTime, salary (when LinkedIn shows one), " +
+              "jobUrl and companyLogo; on failure, such as LinkedIn limiting requests, success is false with " +
+              "an error. LinkedIn serves 10 jobs per request, so every 10 jobs asked for add about a second. " +
+              "Use get_linkedin_job_details on a jobUrl for the full description and applicant count, and " +
+              "check_ghost_job to see whether a posting is really open.",
             inputSchema: {
               type: "object",
               properties: {
                 keyword: {
                   type: "string",
-                  description: "Job search keyword (e.g., 'software engineer')",
-                  default: "",
+                  description: "Job title, skill or company, e.g. 'data engineer'. Leave out to list all jobs in the location",
                 },
                 location: {
                   type: "string",
-                  description: "Location to search for jobs (e.g., 'Berlin, Germany')",
-                  default: "",
+                  description: "City, region or country, e.g. 'Berlin, Germany'. Leave out to search worldwide",
                 },
                 city: {
                   type: "string",
-                  description: "Optional city to refine location (e.g., 'Berlin')",
-                  default: "",
+                  description: "City to search in; when given, it is searched instead of location, e.g. 'Munich'",
                 },
                 country: {
                   type: "string",
-                  description: "Optional country to refine location (e.g., 'Germany')",
-                  default: "",
+                  description: "Country to search in when location is left out, e.g. 'Germany'",
                 },
                 geoId: {
                   type: "string",
-                  description: "Optional LinkedIn geoId to bypass location guessing (e.g., '103644278')",
-                  default: "",
+                  description:
+                    "LinkedIn's numeric location id, e.g. '103644278' for the United States. Use it when a place " +
+                    "name finds the wrong location",
                 },
                 dateSincePosted: {
                   type: "string",
-                  description: "Date range for job posting",
-                  enum: ["past month", "past week", "past 24 hours", "24hr", "today"],
-                  default: "",
+                  description: "Only jobs posted within this period ('24hr' and 'today' mean the past 24 hours). Leave out for any date",
+                  enum: ["past 24 hours", "past week", "past month", "24hr", "today"],
                 },
                 jobType: {
                   type: "string",
-                  description: "Type of employment",
+                  description: "Only this type of employment. Leave out for all types",
                   enum: ["full time", "part time", "contract", "temporary", "volunteer", "internship"],
-                  default: "",
                 },
                 remoteFilter: {
                   type: "string",
-                  description: "Remote work preference",
+                  description: "Only this workplace type. Leave out for all",
                   enum: ["on site", "remote", "hybrid"],
-                  default: "",
-                },
-                salary: {
-                  type: "string",
-                  description: "Minimum salary",
-                  enum: ["40000", "60000", "80000", "100000", "120000"],
-                  default: "",
-                },
-                experienceLevel: {
-                  type: "string",
-                  description: "Experience level required",
-                  enum: ["internship", "entry level", "associate", "senior", "director", "executive"],
-                  default: "",
-                },
-                limit: {
-                  type: "string",
-                  description: "Maximum number of jobs to return",
-                  default: "10",
-                },
-                sortBy: {
-                  type: "string",
-                  description: "Sort results by",
-                  enum: ["recent", "relevant"],
-                  default: "recent",
-                },
-                page: {
-                  type: "string",
-                  description: "Page number (0-based)",
-                  default: "0",
-                },
-                has_verification: {
-                  type: "boolean",
-                  description: "Filter for verified jobs only",
-                  default: false,
                 },
                 under_10_applicants: {
                   type: "boolean",
-                  description: "Filter for jobs with under 10 applicants",
+                  description: "Only jobs that fewer than 10 people have applied to so far",
                   default: false,
+                },
+                limit: {
+                  type: "string",
+                  description: "How many jobs to return, as a number in a string, e.g. '25'",
+                  default: "10",
+                },
+                page: {
+                  type: "string",
+                  description: "Which page of results, from '0'. A page is limit jobs long: page '1' with limit '10' returns jobs 11 to 20",
+                  default: "0",
+                },
+                sortBy: {
+                  type: "string",
+                  description: "'recent' for newest first or 'relevant' for LinkedIn's best matches first",
+                  enum: ["recent", "relevant"],
+                  default: "recent",
                 },
               },
             },
@@ -220,13 +205,10 @@ class LinkedInJobsServer {
             dateSincePosted: args.dateSincePosted || "",
             jobType: args.jobType || "",
             remoteFilter: args.remoteFilter || "",
-            salary: args.salary || "",
-            experienceLevel: args.experienceLevel || "",
+            under_10_applicants: args.under_10_applicants === true || args.under_10_applicants === "true",
             limit: args.limit || "10",
             sortBy: args.sortBy || "recent",
             page: args.page || "0",
-            has_verification: args.has_verification || false,
-            under_10_applicants: args.under_10_applicants || false,
           };
 
           console.error("Searching with options:", queryOptions);

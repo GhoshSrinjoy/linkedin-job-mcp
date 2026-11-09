@@ -56,7 +56,7 @@ function normalizeStr(str) {
 function mapDateSincePosted(dateSincePosted) {
   if (!dateSincePosted) return "";
   const key = dateSincePosted.toLowerCase();
-  if (key.includes("24")) return "r86400";
+  if (key.includes("24") || key === "today") return "r86400";
   if (key.includes("week")) return "r604800";
   if (key.includes("month")) return "r2592000";
   return "";
@@ -145,7 +145,8 @@ class Query {
     this.dateSincePosted = queryObject.dateSincePosted || "";
     this.jobType = queryObject.jobType || queryObject.job_format || "";
     this.remoteFilter = queryObject.remoteFilter || queryObject.workplace || "";
-    this.experienceLevel = queryObject.experienceLevel || "";
+    this.under10Applicants =
+      queryObject.under_10_applicants === true || queryObject.under_10_applicants === "true";
     this.sortBy = queryObject.sortBy || "";
     this.geoId =
       queryObject.geoId || resolveGeoId(this.location || this.city || "");
@@ -161,6 +162,7 @@ class Query {
       dateSincePosted: mapDateSincePosted(this.dateSincePosted),
       jobType: mapJobType(this.jobType),
       remoteFilter: mapRemoteFilter(this.remoteFilter),
+      under10Applicants: this.under10Applicants,
       sortBy: mapSortBy(this.sortBy),
       geoId: this.geoId,
     };
@@ -183,6 +185,8 @@ class Query {
 
     const jt = mapJobType(this.jobType);
     if (jt) params.f_JT = jt;
+
+    if (this.under10Applicants) params.f_EA = "true";
 
     const sortBy = mapSortBy(this.sortBy);
     if (sortBy) params.sortBy = sortBy;
@@ -282,21 +286,29 @@ async function query(queryObject = {}) {
   }
 
   const jobs = [];
-  let start = q.page * PAGE_SIZE;
+  const seen = new Set();
+  // Pages are `limit` jobs long. LinkedIn serves fewer cards per request than `count` asks for
+  // (10 at the moment), so each request starts where the previous one ended.
+  let start = q.page * q.limit;
 
   while (jobs.length < q.limit) {
-    // Always request a full page to avoid missing results when the API returns fewer than requested.
     const params = q.buildParams(start, PAGE_SIZE);
     const html = await fetchJobsPage(params);
     const batch = parseJobCards(html);
 
     if (!batch.length) break;
+    start += batch.length;
 
-    jobs.push(...batch);
-    start += PAGE_SIZE;
-
-    // LinkedIn caps guest paging; stop early if we fetched less than a full page
-    if (batch.length < PAGE_SIZE) break;
+    const fresh = batch.filter((job) => {
+      const id = jobIdFrom(job.jobUrl) || job.jobUrl;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    // Only jobs we already have: stop rather than ask for the same page again
+    if (!fresh.length) break;
+    jobs.push(...fresh);
+    if (jobs.length >= q.limit) break;
 
     // Small polite pause
     await delay(500 + Math.random() * 300);

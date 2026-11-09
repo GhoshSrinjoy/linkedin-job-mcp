@@ -7,7 +7,8 @@ const os = require("os");
 const path = require("path");
 const { InMemoryTransport } = require("@modelcontextprotocol/sdk/inMemory.js");
 const { Client } = require("@modelcontextprotocol/sdk/client/index.js");
-const { jobIdFrom, parseJobPage } = require("../index");
+const axios = require("axios");
+const { jobIdFrom, parseJobPage, query, clearCache } = require("../index");
 const { find, withoutTable, tomlCommand } = require("../clients");
 const { createServer } = require("../server");
 const { startApi } = require("../api");
@@ -39,6 +40,41 @@ test("a public job page is read", () => {
   assert.equal(job.seniority, "Mid-Senior level");
   assert.equal(job.acceptingApplications, true);
   assert.match(job.description, /Build data pipelines\.\n+• Python/);
+});
+
+test("a search goes through LinkedIn's 10-job pages and sends its filters", async () => {
+  const original = axios.get;
+  const asked = [];
+  // 23 jobs in all, served 10 per request like LinkedIn's public search
+  axios.get = async (url) => {
+    const params = new URL(url).searchParams;
+    asked.push(params);
+    const start = Number(params.get("start"));
+    const cards = [];
+    for (let i = start; i < Math.min(start + 10, 23); i++) {
+      cards.push(`<li><h3 class="base-search-card__title">Job ${i}</h3>
+        <h4 class="base-search-card__subtitle"><a>Example GmbH</a></h4>
+        <a class="base-card__full-link" href="https://www.linkedin.com/jobs/view/job-${i}-${1000000 + i}"></a></li>`);
+    }
+    return { data: `<ul>${cards.join("")}</ul>` };
+  };
+  try {
+    clearCache();
+    const all = await query({ keyword: "data engineer", limit: "30", dateSincePosted: "today", under_10_applicants: true });
+    assert.equal(all.length, 23);
+    assert.deepEqual(asked.map((p) => p.get("start")), ["0", "10", "20", "23"]);
+    assert.equal(asked[0].get("f_EA"), "true");
+    assert.equal(asked[0].get("f_TPR"), "r86400");
+
+    asked.length = 0;
+    const secondPage = await query({ keyword: "data engineer", limit: "10", page: "1" });
+    assert.deepEqual(secondPage.map((j) => j.position), Array.from({ length: 10 }, (_, i) => `Job ${10 + i}`));
+    assert.deepEqual(asked.map((p) => p.get("start")), ["10"]);
+    assert.equal(asked[0].get("f_EA"), null);
+  } finally {
+    axios.get = original;
+    clearCache();
+  }
 });
 
 test("connecting keeps the other servers and settings", () => {
