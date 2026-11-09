@@ -1,3 +1,6 @@
+// The MCP SDK's HTTP transport calls the global `crypto`, which Node 18 only has behind a flag
+if (!globalThis.crypto) globalThis.crypto = require("node:crypto").webcrypto;
+
 const express = require("express");
 const { StreamableHTTPServerTransport } = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
 const { localhostHostValidation } = require("@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js");
